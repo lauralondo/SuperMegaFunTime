@@ -1,6 +1,8 @@
 import scala.slick.driver.H2Driver.simple._
 import scala.slick.lifted.{ProvenShape, ForeignKeyQuery}
 
+//def owner: ForeignKeyQuery[, ()] = foreignKey("", , TableQuery[])(_.)
+
 //A User table with 4 columns: user_id, user_name, user_password, user_email
 class reg_users(tag: Tag) extends Table[(Int, String, String, String)](tag, "REG_USERS"){
     def user_id: Column[Int] = column[Int]("USER_ID", O.PrimaryKey) // This is the primary key column
@@ -34,41 +36,53 @@ class reg_events(tag: Tag) extends Table[(Int, String, String, String, String, S
                 reg_events_description, reg_events_street, reg_events_city, reg_events_state, reg_events_zip, reg_events_day, reg_events_time, reg_events_up, reg_events_down, reg_events_total, reg_events_tieBreaker)
 }
 
+
+
 //A Social Group table with 5 columns: sgroup_id, sgroup_lead, sgroup_name, sgroup_members, sgroup_events
-class socialGroup(tag : Tag) extends Table[(Int, Int, String, Int, Int)](tag, "SOCIALGROUP"){
+class sgroup(tag : Tag) extends Table[(Int, Int, String)](tag, "SOCIALGROUP"){
     def sgroup_id: Column[Int] = column[Int]("SGROUP_ID", O.PrimaryKey) //Primary Key
-    def sgroup_lead: Column[Int] = column[Int]("USER_ID")
+    def sgroup_lead: Column[Int] = column[Int]("SGROUP_LEADER")
     def sgroup_name: Column[String] = column[String]("SGROUP_NAME")
-    def sgroup_members: Column[Int] = column[Int]("LISTOF_MEMBERS")
-    def sgroup_events: Column[Int] = column[Int]("LISTOF_EVENTS")
     
-    def * : ProvenShape[(Int, Int, String, Int, Int)] = (sgroup_id, sgroup_lead, sgroup_name, sgroup_members, sgroup_events)
+    def * : ProvenShape[(Int, Int, String)] = (sgroup_id, sgroup_lead, sgroup_name)
     
     //Foreign Key(s)
     def leader: ForeignKeyQuery[reg_users, (Int, String, String, String)] = foreignKey("SGROUP_LEADER", sgroup_lead, TableQuery[reg_users])(_.user_id)
-    def listof_members: ForeignKeyQuery[listof_members, (Int, Int)] = foreignKey("LISTOF_MEMBERS", sgroup_members, TableQuery[listof_members])(_.listof_members_id)
-    def listof_events: ForeignKeyQuery[listof_events, (Int, Int)] = foreignKey("LISTOF_EVENTS", sgroup_events, TableQuery[listof_events])(_.listof_events_id)
+}
+
+//A Contacts table with 2 columns:
+class contacts(tag : Tag) extends Table[(Int, Int)](tag, "CONTACTS"){
+    def contacts_owner_id: Column[Int] = column[Int]("CONTACTS_OWNER", O.PrimaryKey)
+    def contact_id: Column[Int] = column[Int]("CONTACT_TO_OWNER")
+    
+    def * : ProvenShape[(Int, Int)] = (contacts_owner_id, contact_id)
+    
+    //Foreign Key(s)
+    def owner: ForeignKeyQuery[reg_users, (Int, String, String, String)] = foreignKey("CONTACTS_OWNER", contacts_owner_id, TableQuery[reg_users])(_.user_id)
+    def contact: ForeignKeyQuery[reg_users, (Int, String, String, String)] = foreignKey("CONTACTS_OWNER", contacts_owner_id, TableQuery[reg_users])(_.user_id)
 }
 
 //A Members table with 2 columns:
-class listof_members(tag: Tag) extends Table[(Int, Int)](tag, "LISTOF_MEMBERS"){
-    def listof_members_id: Column[Int] = column[Int]("LISTOF_MEMBERS_ID", O.PrimaryKey)
+class user_to_sgroup(tag: Tag) extends Table[(Int, Int)](tag, "SGROUP_MEMBERS"){
+    def sgroup_id: Column[Int] = column[Int]("SGROUP_ID", O.PrimaryKey)
     def members_id: Column[Int] = column[Int]("MEMBERS_ID")
     
-    def * : ProvenShape[(Int, Int)] = (listof_members_id, members_id)
+    def * : ProvenShape[(Int, Int)] = (sgroup_id, members_id)
     
     //Foreign Key(s)
-    def members: ForeignKeyQuery[reg_users, (Int, String, String, String)] = foreignKey("SGROUP_MEMBERS", members_id, TableQuery[reg_users])(_.user_id)
+    def group_id: ForeignKeyQuery[sgroup, (Int, Int, String)] = foreignKey("SGROUP_ID", sgroup_id, TableQuery[sgroup])(_.sgroup_id)
+    def member: ForeignKeyQuery[reg_users, (Int, String, String, String)] = foreignKey("SGROUP_MEMBER", members_id, TableQuery[reg_users])(_.user_id)
 }
 
 //A Events table with 2 columns:
 class listof_events(tag: Tag) extends Table[(Int, Int)](tag, "LISTOF_EVENTS"){
-    def listof_events_id: Column[Int] = column[Int]("LISTOF_EVENTS_ID", O.PrimaryKey)
+    def sgroup_id: Column[Int] = column[Int]("LISTOF_EVENTS_ID", O.PrimaryKey)
     def reg_events_id: Column[Int] = column[Int]("EVENTS_ID")
     
-    def * : ProvenShape[(Int, Int)] = (listof_events_id, reg_events_id)
+    def * : ProvenShape[(Int, Int)] = (sgroup_id, reg_events_id)
     
     //Foreign Key(s)
+    def group_id: ForeignKeyQuery[sgroup, (Int, Int, String)] = foreignKey("SGROUP_ID", sgroup_id, TableQuery[sgroup])(_.sgroup_id)
     def reg_events: ForeignKeyQuery[reg_events, (Int, String, String, String, String, String, String, String, Int, Int, Int, Int, Int, Int)] = foreignKey("EVENTS_ID", reg_events_id, TableQuery[reg_events])(_.reg_events_id)
 }
 
