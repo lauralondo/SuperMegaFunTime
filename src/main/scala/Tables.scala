@@ -1,6 +1,9 @@
 import scala.slick.driver.H2Driver.simple._
 import scala.slick.lifted.{ProvenShape, ForeignKeyQuery}
 
+//You have 6 tables
+
+//Foreign Key template
 //def owner: ForeignKeyQuery[, ()] = foreignKey("", , TableQuery[])(_.)
 
 //A User table with 4 columns: user_id, user_name, user_password, user_email
@@ -51,15 +54,16 @@ class sgroup(tag : Tag) extends Table[(Int, Int, String)](tag, "SOCIALGROUP"){
 }
 
 //A Contacts table with 2 columns:
-class contacts(tag : Tag) extends Table[(Int, Int)](tag, "CONTACTS"){
-    def contacts_owner_id: Column[Int] = column[Int]("CONTACTS_OWNER", O.PrimaryKey)
-    def contact_id: Column[Int] = column[Int]("CONTACT_TO_OWNER")
+class contacts(tag : Tag) extends Table[(Int, Int, Int)](tag, "CONTACTS"){
+    def contact_id: Column[Int] = column("CONTACT_ID", O.PrimaryKey)
+    def contacts_owner_id: Column[Int] = column[Int]("CONTACTS_OWNER")
+    def contactto_owner_id: Column[Int] = column[Int]("CONTACTTO_OWNER")
     
-    def * : ProvenShape[(Int, Int)] = (contacts_owner_id, contact_id)
+    def * : ProvenShape[(Int, Int, Int)] = (contact_id, contacts_owner_id, contactto_owner_id)
     
     //Foreign Key(s)
     def owner: ForeignKeyQuery[reg_users, (Int, String, String, String)] = foreignKey("CONTACTS_OWNER", contacts_owner_id, TableQuery[reg_users])(_.user_id)
-    def contact: ForeignKeyQuery[reg_users, (Int, String, String, String)] = foreignKey("CONTACTS_OWNER", contacts_owner_id, TableQuery[reg_users])(_.user_id)
+    def contact: ForeignKeyQuery[reg_users, (Int, String, String, String)] = foreignKey("CONTACTTO_OWNER", contactto_owner_id, TableQuery[reg_users])(_.user_id)
 }
 
 //A Members table with 2 columns:
