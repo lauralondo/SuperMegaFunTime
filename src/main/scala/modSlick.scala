@@ -24,10 +24,10 @@ object modSlick extends App {
   val contacts: TableQuery[contacts] = TableQuery[contacts]
   
   //The query interface for the * table
-  //val user_to_sgroup: TableQuery[user_to_sgroup] = TableQuery[user_to_sgroup]
+  val user_to_sgroup: TableQuery[user_to_sgroup] = TableQuery[user_to_sgroup]
   
   //The query interface for the * table
-  //val listof_events: TableQuery[listof_events] = TableQuery[listof_events]
+  val listof_events: TableQuery[listof_events] = TableQuery[listof_events]
   
   //The query interface for the * table
   //val : TableQuery[] = TableQuery[] 
@@ -37,8 +37,8 @@ object modSlick extends App {
   Database.forURL("jdbc:h2:mem:insertname", driver = "org.h2.Driver").withSession { implicit session =>
   
   //Create the schema by combining the DDLs for the tables using the query interfaces
- // (reg_users.ddl ++ reg_events.ddl ++ sgroup.ddl ++ contacts.ddl ++ user_to_sgroup.ddl ++ listof_events.ddl).create
-   (reg_users.ddl  ++ reg_events.ddl ++ sgroup.ddl ++ contacts.ddl).create
+  //(reg_users.ddl ++ reg_events.ddl ++ sgroup.ddl ++ contacts.ddl ++ user_to_sgroup.ddl ++ listof_events.ddl).create
+   (reg_users.ddl  ++ reg_events.ddl ++ sgroup.ddl ++ contacts.ddl ++ user_to_sgroup.ddl ++ listof_events.ddl).create
   
   // Create / Insert
   
@@ -72,6 +72,16 @@ object modSlick extends App {
   contacts += (5,3,4)
   contacts += (6,4,3)
   
+  //Insert people into the user_to_group
+  val user_to_sgroup_insert: Option[Int] = user_to_sgroup ++= Seq(
+    (1,1,2)  
+    )
+  
+  //Insert events into the listof_events
+  val Events_to_sgroup_insert: Option[Int] = listof_events ++= Seq(
+    (1,1,2)  
+    )
+  
   //val composedQuery
   val namesQuery: Query[Column [String], String] = reg_users.sortBy(_.user_name).map(_.user_name)
   println(namesQuery.list)
@@ -88,11 +98,29 @@ object modSlick extends App {
   val contactsQuery: Query[Column[Int], Int] = contacts.filter(_.contacts_owner_id === 2).map(_.contactto_owner_id)
   println(contactsQuery.list)
   
+  //Construct query finding contacts of user
+  val userToSgroupQuery: Query[Column[Int], Int] = user_to_sgroup.sortBy(_.user_to_sgroup_id).map(_.user_to_sgroup_id)
+  println(userToSgroupQuery.list)
   
+  //Construct query finding contacts of user
+  //val eventsToSgroupQuery: Query[Column[Int], Int] = listof_events.sortBy(_.listof_events_id).map(reg_events.filter())
+  //println(userToSgroupQuery.list)
   
+  /*
+  for {
+     g <- listof_events if g.sgroup_id === 1 //get the sgroup
+     e <- g.events
+  } yeild(e.reg_events_title)
+  */
   
+
+  val joinQuery: Query[(Column[String]), (String)] = for {
+     g <- listof_events if g.sgroup_id === 1 //get the sgroup
+     e <- g.events
+  } yield(e.reg_events_title)
   
-  
+  println(joinQuery.list)
+
   
   
   
