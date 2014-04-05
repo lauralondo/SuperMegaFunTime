@@ -60,26 +60,44 @@ object modSlick extends App {
   
   //Insert some users individually
   val sgroupInsert: Option[Int] = sgroup ++= Seq(
-     (1, 1, "Paul's Group")      
-      
+     (1, 2, "Molly's Group"),
+     (2,1,"Paul's Group")      
     )  
   
  // Insert some contacts
-  contacts += (1,1,2)
-  contacts += (2,2,1)
-  contacts += (3,2,3)
-  contacts += (4,3,2)
-  contacts += (5,3,4)
-  contacts += (6,4,3)
+  val contactsInsert: Option[Int] = contacts ++= Seq(
+      (1,1,2),
+      (2,2,1),
+      (3,2,3),
+      (4,3,2),
+      (5,3,4),
+      (6,4,3),
+      (7,4,1),
+      (8,1,4),
+      (9,2,4),
+      (10,4,2),
+      (11,5,2),
+      (12,2,5),
+      (13,1,5),
+      (14,5,1)
+      )
   
   //Insert people into the user_to_group
   val user_to_sgroup_insert: Option[Int] = user_to_sgroup ++= Seq(
-    (1,1,2)  
+    (1,1,2),
+    (2,1,4),
+    (3,2,2),
+    (4,2,4),
+    (5,2,5)
     )
   
   //Insert events into the listof_events
   val Events_to_sgroup_insert: Option[Int] = listof_events ++= Seq(
-    (1,1,2)  
+    (1,1,1),
+    (2,1,4),
+    (3,2,3),
+    (4,2,4),
+    (5,2,5)
     )
   
   //val composedQuery
@@ -103,10 +121,7 @@ object modSlick extends App {
   println(userToSgroupQuery.list)
   
   //Construct query finding contacts of user
-  //val eventsToSgroupQuery: Query[Column[Int], Int] = listof_events.sortBy(_.listof_events_id).map(reg_events.filter())
-  //println(userToSgroupQuery.list)
-  
-  /*
+  /*WORNG WAY
   for {
      g <- listof_events if g.sgroup_id === 1 //get the sgroup
      e <- g.events
