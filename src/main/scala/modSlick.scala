@@ -99,6 +99,8 @@ object modSlick extends App {
     (4,2,4),
     (5,2,5)
     )
+    
+  /*
   
   //val composedQuery
   val namesQuery: Query[Column [String], String] = reg_users.sortBy(_.user_name).map(_.user_name)
@@ -136,9 +138,61 @@ object modSlick extends App {
   
   println(joinQuery.list)
 
+  */
   
   
+  var res = ""
+  var valid = false
   
+  //Main Menu
+  do {
+	  println("=-=-= SuperMegaFunTime! =-=-=")
+	  println("1- signin")
+	  println("2- new user")
+	  println("quit- exit program")
+	  res = readLine()
+	  if(res == "1" || res == "2") {
+	    valid = true
+	  }
+	  else if(res == "quit"){
+		  println("goodbye!")
+		  exit
+	  }
+	  else
+	    println("\ninvalid option.")
+  } while (!valid)
+  
+    
+  var currUser = ""	//the currently signed in user
+    
+  //Signin Menu
+  if (res == "1") {	//user selected sign in
+    valid = false
+    do{
+    	println("=-=-=-= SignIn =-=-=-=")
+    	println("quit- exit program")
+    	println("enter username:")
+    	var username = readLine();	//get username
+    	println("enter password:")
+    	var pass = readLine()		//get password
+    	
+    	//query database
+    	val userQuery: Query[Column [String], String] = reg_users.filter(_.user_name === username).filter(_.user_password === pass).map(_.user_name)
+    	if (userQuery.exists.run) { 	//check if there was a match
+    	  currUser = userQuery.first 	//save currently signed-in user
+    	  println("welcome back " + currUser + "!")
+    	  valid = true
+    	}
+    	else if(username == "quit") {
+    	  println("goodbye!")
+		  valid = true
+		  exit
+    	}
+    	else
+    	  println("user & password combination not found")
+    } while (!valid)	//while there is no valid answer, ask again
+    
+  }
   
   
   
