@@ -43,11 +43,11 @@ object modSlick extends App {
   // Create / Insert
   
   //Insert some users individually
-  reg_users += (1, "Paul", "iamawesome", "123@123.com")
-  reg_users += (2, "Laura", "123", "123@123.com")
-  reg_users += (3, "Molly", "123", "123@123.com")
-  reg_users += (4, "Jasper", "123", "123@123.com")
-  reg_users += (5, "SAT", "123", "123@123.com")
+  reg_users += (1, "paul", "iamawesome", "123@123.com")
+  reg_users += (2, "laura", "123", "123@123.com")
+  reg_users += (3, "molly", "123", "123@123.com")
+  reg_users += (4, "jasper", "123", "123@123.com")
+  reg_users += (5, "sat", "123", "123@123.com")
   
   //Insert some events
   val eventsInsert: Option[Int] = reg_events ++= Seq(
@@ -141,20 +141,20 @@ object modSlick extends App {
   */
   
   
-  var res = ""
-  var valid = false
+  var signInOp = ""	//signIn option (signin or
+  var valid = false	//is it a valid response?
   
   //Main Menu
   do {
 	  println("=-=-= SuperMegaFunTime! =-=-=")
+	  println("to exit program, type quit.")
 	  println("1- signin")
 	  println("2- new user")
-	  println("quit- exit program")
-	  res = readLine()
-	  if(res == "1" || res == "2") {
+	  signInOp = readLine()
+	  if(signInOp == "1" || signInOp == "2") {
 	    valid = true
 	  }
-	  else if(res == "quit"){
+	  else if(signInOp == "quit"){
 		  println("goodbye!")
 		  exit
 	  }
@@ -166,13 +166,17 @@ object modSlick extends App {
   var currUser = ""	//the currently signed in user
     
   //Signin Menu
-  if (res == "1") {	//user selected sign in
+  if (signInOp == "1") {	//user selected sign in
     valid = false
     do{
     	println("=-=-=-= SignIn =-=-=-=")
-    	println("quit- exit program")
+    	println("to exit program, type quit.")
     	println("enter username:")
     	var username = readLine();	//get username
+    	if(username == "quit") {	//if user enters quit
+    	  println("goodbye!")
+		  exit
+    	}
     	println("enter password:")
     	var pass = readLine()		//get password
     	
@@ -183,18 +187,103 @@ object modSlick extends App {
     	  println("welcome back " + currUser + "!")
     	  valid = true
     	}
-    	else if(username == "quit") {
-    	  println("goodbye!")
-		  valid = true
-		  exit
-    	}
     	else
-    	  println("user & password combination not found")
+    	  println("\nuser & password combination not found")
     } while (!valid)	//while there is no valid answer, ask again
+  } //end user signIn
+  
+  
+//Registration Menu
+  else if(signInOp == "2") {	//user selected register
+	var username = ""
+	var password = ""
+	var email = ""
+	  
+    println("\n=-=-=-= SignUp =-=-=-=")
+    println("to exit program, type quit.")
     
-  }
+    //get username
+    valid = false
+    do {
+	    println("enter a new username")
+	    username = readLine().trim().toLowerCase()	//get username input
+	    val userQuery: Query[Column [String], String] = reg_users.filter(_.user_name === username).map(_.user_name) //check if username exists in database
+	    if(!userQuery.exists.run)					//if username doesnt exist,
+	    	valid = true							//its valid
+	    else if(username == "quit") {				//user types quit
+	    	println("goodbye!")
+	    	exit									//end program
+	    }
+	    else										//else username already exists
+	    	println("\nusername " + username + " already exists")
+    } while(!valid)	//if the username is not valid, ask again
+      
+    println("username: " + username)
+    
+    
+    //get password
+    var passMatch = false	//passwords match
+    do {
+    	//password input
+    	valid = false
+	    do {
+	    	println("\nenter password")
+	    	password = readLine()						//get password input
+	    	if(password == "quit") {					//if user types quit
+	    		println("goodbye!")
+	    		exit									//end program
+	    	}
+	    	if(password.length() >= 3 && password.length() <= 16)	//if password is the correct length
+	    		valid = true										
+	    	else													//else invalid password
+	    		println("password must be betwee 3 and 16 characters.")
+	    } while(!valid)	//if the password is invalid, ask again
+	    
+	    //verify password
+	    println("retype password")
+	    val passRetype = readLine()		//get password again
+	    if(password == passRetype)		//if equal to previous,
+	    	passMatch = true			//its a match
+	    else
+	      println("passwords do not match.")    
+    } while(!passMatch)	//if passwords dont match, ask again
+      
+      
+    //get email
+    valid = false
+    do {
+	    println("\nenter e-mail address")
+	    email = readLine().trim()		//get email input
+	    val userQuery: Query[Column [String], String] = reg_users.filter(_.user_email === email).map(_.user_name) //check if email already in database
+	    if(!userQuery.exists.run)		//if not in database,
+	    	valid = true				//it is a valid email
+	    else if(email == "quit") {	//if user types quit
+	    	println("goodbye!")
+	    	exit						//exit program
+	    }
+	    else							//else email already in database
+	    	println("\nemail " + email + " already has an account.")
+    } while(!valid)	//if the username is not valid, ask again
+      
+    println("email: " + email)
+      
+    
+    //reg_users += (1, username, password, email)	//add this user to the table
+    												//ERROR: PRIMARY_KEY_VIOLATION
+    println("\nuser " + username + " created. (well not really. TODO: we need to figure out primary key autogen)")
+    println("Welcome to SMFT!")
+  } //end user registration
   
+  println("DONE")
+ 
+  //test info
+  //val composedQuery
+  println("\n\ntest info")
+  val namesQuery: Query[Column [String], String] = reg_users.sortBy(_.user_name).map(_.user_name)
+  println("users:")
+  println(namesQuery.list)
+    
+    
   
-  
-  }
-}
+  } //end session
+} //end modSlick
