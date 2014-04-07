@@ -141,10 +141,13 @@ object modSlick extends App {
   */
   
   
-  var signInOp = ""	//signIn option (signin or
-  var valid = false	//is it a valid response?
   
-  //Main Menu
+  var valid = false	//is it a valid response?
+
+  
+  //Login Menu
+  var signInOp = ""	//signIn option (signin or register)
+  var currUser = ""	//the currently signed in user
   do {
 	  println("=-=-= SuperMegaFunTime! =-=-=")
 	  println("to exit program, type quit.")
@@ -162,14 +165,13 @@ object modSlick extends App {
 	    println("\ninvalid option.")
   } while (!valid)
   
-    
-  var currUser = ""	//the currently signed in user
+
     
   //Signin Menu
   if (signInOp == "1") {	//user selected sign in
     valid = false
     do{
-    	println("=-=-=-= SignIn =-=-=-=")
+    	println("\n=-=-=-= SignIn =-=-=-=")
     	println("to exit program, type quit.")
     	println("enter username:")
     	var username = readLine();	//get username
@@ -193,7 +195,7 @@ object modSlick extends App {
   } //end user signIn
   
   
-//Registration Menu
+  //Registration Menu
   else if(signInOp == "2") {	//user selected register
 	var username = ""
 	var password = ""
@@ -270,20 +272,98 @@ object modSlick extends App {
     
     //reg_users += (1, username, password, email)	//add this user to the table
     												//ERROR: PRIMARY_KEY_VIOLATION
+    currUser = username
     println("\nuser " + username + " created. (well not really. TODO: we need to figure out primary key autogen)")
     println("Welcome to SMFT!")
   } //end user registration
   
-  println("DONE")
- 
-  //test info
-  //val composedQuery
-  println("\n\ntest info")
-  val namesQuery: Query[Column [String], String] = reg_users.sortBy(_.user_name).map(_.user_name)
-  println("users:")
-  println(namesQuery.list)
-    
-    
   
+  //we now have a logged-in user
+  val currUserID = reg_users.filter(_.user_name === currUser).first()._1 //grab the id for this useer
+  
+  
+  //Main Menu
+  var mainOp = ""
+  valid = false
+  do {
+    println("\n=-=-=-= Main Menu =-=-=-=")
+	println("to exit program, type exit.")
+	println("1- Events")
+	println("2- Friends")
+	//println("3- My Group")
+	println("4- Logout")
+	
+	mainOp = readLine()
+	//exit
+    if(mainOp == "exit") {		//if user typed exit
+      println("\ngoodbye")
+      exit
+    }
+    
+    //events
+    else if(mainOp == "1") {	//if user selected events
+      do {
+	      println("\n=-=-=-= Events =-=-=-=-=")
+	      println("to exit program, type exit.")
+	      println("0- back")
+	      //Construct query finding events
+	      val eventQuery = reg_events.sortBy(_.reg_events_id).map(_.reg_events_title)
+	      eventQuery.foreach(println) //cant figure out how to print this in a better way.... 
+	      val response = readLine()
+	      if(response == "exit") {		//if user typed exit
+	    	  println("\ngoodbye")
+	    	  exit
+	      }
+	      else if(response == "0")		//user selected back
+	          valid = true
+	      else
+	        println("invalid response")//else invalid response
+      } while (!valid)
+      valid = false
+    } //end events
+    
+    
+    //friends
+    else if(mainOp == "2") {		//if user selected Friends
+      do {
+	      println("\n=-=-=-= Friends =-=-=-=")
+	      println("to exit program, type exit.")
+	      println("0- back")
+	      //construct query finding my friends
+	      val friendQuery: Query[(Column[String]), (String)] = for {
+	        c <- contacts if c.contacts_owner_id === 1
+	        o <- c.contact
+	      } yield(o.user_name)
+	      friendQuery.foreach(println)
+      
+	      val response = readLine()
+		  if(response == "exit") {		//if user typed exit
+		   	  println("\ngoodbye")
+		   	  exit
+		  }
+		  else if(response == "0")		//user selected back
+		      valid = true
+		  else
+		      println("invalid response")//else invalid response
+	  	  } while (!valid)
+	      valid = false
+    }
+    
+    //logout
+    else if (mainOp == "4"){
+      println("\nlogging out")
+      exit
+    }
+    
+    //other
+    else
+      println("invalid option")
+  } while (!valid)
+  
+		  
+  
+  
+  
+  println("DONE")   
   } //end session
 } //end modSlick
