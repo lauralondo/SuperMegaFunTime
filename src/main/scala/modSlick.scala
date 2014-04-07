@@ -142,7 +142,7 @@ object modSlick extends App {
   
   
   
-  var valid = false	//is it a valid response?
+  var valid = false    //is it a valid response?
 
   
   //Login Menu
@@ -279,7 +279,7 @@ object modSlick extends App {
   
   
   //we now have a logged-in user
-  val currUserID = reg_users.filter(_.user_name === currUser).first()._1 //grab the id for this useer
+  val currUserID = reg_users.filter(_.user_name === currUser).first()._1 //grab the id for this user
   
   
   //Main Menu
@@ -290,8 +290,9 @@ object modSlick extends App {
 	println("to exit program, type exit.")
 	println("1- Events")
 	println("2- Friends")
-	//println("3- My Group")
-	println("4- Logout")
+	println("3- My Group")
+	println("4- Create Event")
+	println("5- Logout")
 	
 	mainOp = readLine()
 	//exit
@@ -349,9 +350,107 @@ object modSlick extends App {
 	      valid = false
     }
     
+    //My group
+        else if(mainOp == "3") {		//if user selected My Group
+      do {
+	      println("\n=-=-=-= My Group =-=-=-=")
+	      println("to exit program, type exit.")
+	      println("0- back")
+	      //construct query finding my group
+	      val sgroupQuery: Query[(Column[Int]), Int] = sgroup.sortBy(_.sgroup_id).map(_.sgroup_lead)
+	     println(sgroupQuery.list)
+      
+	      val response = readLine()
+		  if(response == "exit") {		//if user typed exit
+		   	  println("\ngoodbye")
+		   	  exit
+		  }
+		  else if(response == "0")		//user selected back
+		      valid = true
+		  else
+		      println("invalid response")//else invalid response
+	  	  } while (!valid)
+	      valid = false
+    }
+    
+    
+    
+    //Create Event
+        else if (mainOp == "4")
+    do{
+    	println("\n=-=-=-= Create Group =-=-=-=")
+    	println("to exit program, type quit.")
+    	println("enter group name:")
+    	var eventname = readLine();	//get group number
+    	if(eventname == "quit") {	//if user enters quit
+    	  println("goodbye!")
+		  exit
+    	}
+    	
+    	println("enter number of people to add")
+    	var eventPitch = readLine(); //get number of people to add to group
+//    	}
+    	if(eventPitch == "quit"){ //if user enters quit
+    	    println("goodbye")
+    	    exit
+    	  }
+    	println("Please add description of event")
+    	var eventDescription = readLine(); //get description of event
+    	if(eventDescription == "quit"){ //if user enters quit
+    	println("goodbye")
+    	exit
+    	  }
+    	println("Please add name of street for event")
+    	var eventStreet = readLine(); //get street name of event
+    	if(eventStreet == "quit"){ //if user enters quit
+    	println("goodbye")
+    	exit
+    	  }    	
+     	println("Please add name of city for event")
+    	var eventCity = readLine();  //get city of event
+    	if(eventCity == "quit"){ //if user enters quit
+    	println("goodbye")
+    	exit
+    	  } 
+    	println("Please add state of event")
+    	var eventState = readLine(); //get state of event
+    	if(eventState == "quit"){ //if user enters quit
+    	println("goodbye")
+    	exit
+    	  }    	
+    	println("Please add zip code of event")
+    	var eventZipCode = readLine(); //get zip code of event
+    	if(eventZipCode == "quit"){ //if user enters quit
+    	println("goodbye")
+    	exit
+    	  }
+    	println("Please add day of event in integer form")
+    	var eventDate= readLine(); //get day of event
+    	if(eventDate == "quit"){ //if user enters quit
+    	println("goodbye")
+    	exit
+    	  } 
+    	println("Please add time of event in integer form")
+    	var eventTime = readLine(); //get time of event
+    	if(eventTime == "quit"){ //if user enters quit
+    	println("goodbye")
+    	exit
+    	  }
+    	(reg_events.reg_events_title ~ reg_events.reg_events_pitch ~ reg_events.reg_events_description ~ reg_events.reg_events_street ~ reg_events.reg_events_city ~ reg_events.reg_events_state ~ reg_events.reg_events_zip ~ reg_events.reg_events_day ~ reg_events.reg_events_time).insert(eventname, eventPitch, eventDescription, eventStreet, eventCity, eventState, eventZipCode, eventDate, eventTime) // add values to table 
+    	valid = true // exit loop 
+//    	  val eventQuery: Query[Column[Int], String] = reg_events.filter[(reg_events_id).filter(reg_events_title == eventname).filter(reg_events_pitch == eventPitch).filter(reg_events_description == eventDescription). filter(reg_events_street == eventStreet).filter( reg_events_city == eventCity).filter( reg_events_state == eventState).filter( reg_events_zip == eventZipCode).filter( reg_events_day == eventDate).filter( reg_events_time == eventTime)
+//    	    .filter( reg_events_up).filter( reg_events_down).filter( reg_events_total).filter( reg_events_tieBreaker).map(_.user_name)]
+    	//query database   	  
+    } while (!valid)	//while there is no valid answer, ask again
+
+  
+  
+  
+    
     //logout
-    else if (mainOp == "4"){
-      println("\nlogging out")
+    else if (mainOp == "5"){
+      println("\nlogging out"
+    		  "\nlogged out")
       exit
     }
     
@@ -367,3 +466,6 @@ object modSlick extends App {
   println("DONE")   
   } //end session
 } //end modSlick
+
+ 
+ 
