@@ -61,7 +61,7 @@ object modSlick extends App {
   //Insert some users individually
   val sgroupInsert: Option[Int] = sgroup ++= Seq(
      (1, 2, "Molly's Group"),
-     (2,1,"Paul's Group")      
+     (2, 1, "Paul's Group")      
     )  
   
  // Insert some contacts
@@ -85,8 +85,8 @@ object modSlick extends App {
   //Insert people into the user_to_group
   val user_to_sgroup_insert: Option[Int] = user_to_sgroup ++= Seq(
     (1,1,2),
-    (2,1,4),
-    (3,2,2),
+    (2,1,3),
+    (3,2,1),
     (4,2,4),
     (5,2,5)
     )
@@ -139,328 +139,368 @@ object modSlick extends App {
   println(joinQuery.list)
 
   */
-  
-  
-  
-  var valid = false    //is it a valid response?
-
-  
-  //Login Menu
-  var signInOp = ""	//signIn option (signin or register)
-  var currUser = ""	//the currently signed in user
-  do {
-	  println("=-=-= SuperMegaFunTime! =-=-=")
-	  println("to exit program, type quit.")
-	  println("1- signin")
-	  println("2- new user")
-	  signInOp = readLine()
-	  if(signInOp == "1" || signInOp == "2") {
-	    valid = true
-	  }
-	  else if(signInOp == "quit"){
-		  println("goodbye!")
-		  exit
-	  }
-	  else
-	    println("\ninvalid option.")
-  } while (!valid)
-  
-
     
-  //Signin Menu
-  if (signInOp == "1") {	//user selected sign in
-    valid = false
-    do{
-    	println("\n=-=-=-= SignIn =-=-=-=")
-    	println("to exit program, type quit.")
-    	println("enter username:")
-    	var username = readLine();	//get username
-    	if(username == "quit") {	//if user enters quit
-    	  println("goodbye!")
-		  exit
-    	}
-    	println("enter password:")
-    	var pass = readLine()		//get password
-    	
-    	//query database
-    	val userQuery: Query[Column [String], String] = reg_users.filter(_.user_name === username).filter(_.user_password === pass).map(_.user_name)
-    	if (userQuery.exists.run) { 	//check if there was a match
-    	  currUser = userQuery.first 	//save currently signed-in user
-    	  println("welcome back " + currUser + "!")
-    	  valid = true
-    	}
-    	else
-    	  println("\nuser & password combination not found")
-    } while (!valid)	//while there is no valid answer, ask again
-  } //end user signIn
-  
-  
-  //Registration Menu
-  else if(signInOp == "2") {	//user selected register
-	var username = ""
-	var password = ""
-	var email = ""
-	  
-    println("\n=-=-=-= SignUp =-=-=-=")
-    println("to exit program, type quit.")
-    
-    //get username
-    valid = false
-    do {
-	    println("enter a new username")
-	    username = readLine().trim().toLowerCase()	//get username input
-	    val userQuery: Query[Column [String], String] = reg_users.filter(_.user_name === username).map(_.user_name) //check if username exists in database
-	    if(!userQuery.exists.run)					//if username doesnt exist,
-	    	valid = true							//its valid
-	    else if(username == "quit") {				//user types quit
-	    	println("goodbye!")
-	    	exit									//end program
-	    }
-	    else										//else username already exists
-	    	println("\nusername " + username + " already exists")
-    } while(!valid)	//if the username is not valid, ask again
-      
-    println("username: " + username)
-    
-    
-    //get password
-    var passMatch = false	//passwords match
-    do {
-    	//password input
-    	valid = false
-	    do {
-	    	println("\nenter password")
-	    	password = readLine()						//get password input
-	    	if(password == "quit") {					//if user types quit
-	    		println("goodbye!")
-	    		exit									//end program
+    //login method
+    def login() : String =  {
+    	var valid = false
+    	var currUser = ""
+	    do{
+	    	println("\n=-=-=-= SignIn =-=-=-=")
+	    	println("to exit program, type exit.")
+	    	println("enter username:")
+	    	var username = readLine();	//get username
+	    	if(username == "exit") {	//if user enters quit
+	    	  println("goodbye!")
+			  valid = true
 	    	}
-	    	if(password.length() >= 3 && password.length() <= 16)	//if password is the correct length
-	    		valid = true										
-	    	else													//else invalid password
-	    		println("password must be betwee 3 and 16 characters.")
-	    } while(!valid)	//if the password is invalid, ask again
+	    	println("enter password:")
+	    	var pass = readLine()		//get password
+	    	
+	    	//query database
+	    	val userQuery: Query[Column [String], String] = reg_users.filter(_.user_name === username).filter(_.user_password === pass).map(_.user_name)
+	    	if (userQuery.exists.run) { 	//check if there was a match
+	    	  currUser = userQuery.first 	//save currently signed-in user
+	    	  println("welcome back " + currUser + "!")
+	    	  valid = true
+	    	}
+	    	else
+	    	  println("\nuser & password combination not found")
+	    } while (!valid)	//while there is no valid answer, ask again
+	    return currUser
+   }
+    
+    
+    
+    //registration method
+    def register() : String = {
+    	var username = ""
+		var password = ""
+		var email = ""		  
+	    println("\n=-=-=-= SignUp =-=-=-=")
+	    println("to exit program, type exit.")
+	    println("0- back")
 	    
-	    //verify password
-	    println("retype password")
-	    val passRetype = readLine()		//get password again
-	    if(password == passRetype)		//if equal to previous,
-	    	passMatch = true			//its a match
-	    else
-	      println("passwords do not match.")    
-    } while(!passMatch)	//if passwords dont match, ask again
-      
-      
-    //get email
-    valid = false
-    do {
-	    println("\nenter e-mail address")
-	    email = readLine().trim()		//get email input
-	    val userQuery: Query[Column [String], String] = reg_users.filter(_.user_email === email).map(_.user_name) //check if email already in database
-	    if(!userQuery.exists.run)		//if not in database,
-	    	valid = true				//it is a valid email
-	    else if(email == "quit") {	//if user types quit
-	    	println("goodbye!")
-	    	exit						//exit program
-	    }
-	    else							//else email already in database
-	    	println("\nemail " + email + " already has an account.")
-    } while(!valid)	//if the username is not valid, ask again
-      
-    println("email: " + email)
-      
+	    //get username
+	    var valid = false
+	    do {
+		    println("enter a new username")
+		    username = readLine().trim().toLowerCase()	//get username input
+		    val userQuery: Query[Column [String], String] = reg_users.filter(_.user_name === username).map(_.user_name) //check if username exists in database
+		    
+		    if(username == "exit") {				//user types quit
+		    	println("goodbye!")
+		    	exit									//end program
+		    }
+		    else if(!userQuery.exists.run)					//if username doesnt exist,
+		    	valid = true							//its valid
+		    else										//else username already exists
+		    	println("\nusername " + username + " already exists")
+	    } while(!valid)	//if the username is not valid, ask again   
+	    println("username: " + username)
+	    
+	    //get password
+	    var passMatch = false	//passwords match
+	    do {
+	    	//password input
+	    	valid = false
+		    do {
+		    	println("\nenter password")
+		    	password = readLine()						//get password input
+		    	if(password == "exit") {					//if user types quit
+		    		println("goodbye!")
+		    		exit									//end program
+		    	}
+		    	if(password.length() >= 3 && password.length() <= 16)	//if password is the correct length
+		    		valid = true										
+		    	else													//else invalid password
+		    		println("password must be betwee 3 and 16 characters.")
+		    } while(!valid)	//if the password is invalid, ask again
+		    
+		    //verify password
+		    println("retype password")
+		    val passRetype = readLine()		//get password again
+		    if(password == passRetype)		//if equal to previous,
+		    	passMatch = true			//its a match
+		    else
+		      println("passwords do not match.")    
+	    } while(!passMatch)	//if passwords dont match, ask again
+	          
+	    //get email
+	    valid = false
+	    do {
+		    println("\nenter e-mail address")
+		    email = readLine().trim()		//get email input
+		    val userQuery: Query[Column [String], String] = reg_users.filter(_.user_email === email).map(_.user_name) //check if email already in database
+		    if(!userQuery.exists.run)		//if not in database,
+		    	valid = true				//it is a valid email
+		    else if(email == "exit") {	//if user types quit
+		    	println("goodbye!")
+		    	exit						//exit program
+		    }
+		    else							//else email already in database
+		    	println("\nemail " + email + " already has an account.")
+	    } while(!valid)	//if the username is not valid, ask again
+	      
+	    println("email: " + email)
+	      
+	    //reg_users += (1, username, password, email)	//add this user to the table
+	    												//ERROR: PRIMARY_KEY_VIOLATION
+	    println("\nuser " + username + " created. (well not really. TODO: we need to figure out primary key autogen)")
+	    println("Welcome to SMFT!")
+	    return username
+    } //end register method
     
-    //reg_users += (1, username, password, email)	//add this user to the table
-    												//ERROR: PRIMARY_KEY_VIOLATION
-    currUser = username
-    println("\nuser " + username + " created. (well not really. TODO: we need to figure out primary key autogen)")
-    println("Welcome to SMFT!")
-  } //end user registration
-  
-  
-  //we now have a logged-in user
-  val currUserID = reg_users.filter(_.user_name === currUser).first()._1 //grab the id for this user
-  
-  
-  //Main Menu
-  var mainOp = ""
-  valid = false
-  do {
-    println("\n=-=-=-= Main Menu =-=-=-=")
-	println("to exit program, type exit.")
-	println("1- Events")
-	println("2- Friends")
-	println("3- My Group")
-	println("4- Create Event")
-	println("5- Logout")
+    
+    
+    
+    
+    
+    
+      var valid = false    //is it a valid response?
+	  do {
+	  
+	  valid = false    //is it a valid response?
 	
-	mainOp = readLine()
-	//exit
-    if(mainOp == "exit") {		//if user typed exit
-      println("\ngoodbye")
-      exit
-    }
-    
-    //events
-    else if(mainOp == "1") {	//if user selected events
-      do {
-	      println("\n=-=-=-= Events =-=-=-=-=")
-	      println("to exit program, type exit.")
-	      println("0- back")
-	      //Construct query finding events
-	      val eventQuery = reg_events.sortBy(_.reg_events_id).map(_.reg_events_title)
-	      eventQuery.foreach(println) //cant figure out how to print this in a better way.... 
-	      val response = readLine()
-	      if(response == "exit") {		//if user typed exit
-	    	  println("\ngoodbye")
-	    	  exit
-	      }
-	      else if(response == "0")		//user selected back
-	          valid = true
-	      else
-	        println("invalid response")//else invalid response
-      } while (!valid)
-      valid = false
-    } //end events
-    
-    
-    //friends
-    else if(mainOp == "2") {		//if user selected Friends
-      do {
-	      println("\n=-=-=-= Friends =-=-=-=")
-	      println("to exit program, type exit.")
-	      println("0- back")
-	      //construct query finding my friends
-	      val friendQuery: Query[(Column[String]), (String)] = for {
-	        c <- contacts if c.contacts_owner_id === 1
-	        o <- c.contact
-	      } yield(o.user_name)
-	      friendQuery.foreach(println)
-      
-	      val response = readLine()
-		  if(response == "exit") {		//if user typed exit
-		   	  println("\ngoodbye")
-		   	  exit
-		  }
-		  else if(response == "0")		//user selected back
-		      valid = true
-		  else
-		      println("invalid response")//else invalid response
-	  	  } while (!valid)
-	      valid = false
-    }
-    
-    //My group
-        else if(mainOp == "3") {		//if user selected My Group
-      do {
-	      println("\n=-=-=-= My Group =-=-=-=")
-	      println("to exit program, type exit.")
-	      println("0- back")
-	      //construct query finding my group
-	      val sgroupQuery: Query[(Column[Int]), Int] = sgroup.sortBy(_.sgroup_id).map(_.sgroup_lead)
-	     println(sgroupQuery.list)
-      
-	      val response = readLine()
-		  if(response == "exit") {		//if user typed exit
-		   	  println("\ngoodbye")
-		   	  exit
-		  }
-		  else if(response == "0")		//user selected back
-		      valid = true
-		  else
-		      println("invalid response")//else invalid response
-	  	  } while (!valid)
-	      valid = false
-    }
-    
-    
-    
-    //Create Event
-        else if (mainOp == "4")
-    do{
-    	println("\n=-=-=-= Create Group =-=-=-=")
-    	println("to exit program, type quit.")
-    	println("enter group name:")
-    	var eventname = readLine();	//get group number
-    	if(eventname == "quit") {	//if user enters quit
-    	  println("goodbye!")
-		  exit
-    	}
-    	
-    	println("enter number of people to add")
-    	var eventPitch = readLine(); //get number of people to add to group
-//    	}
-    	if(eventPitch == "quit"){ //if user enters quit
-    	    println("goodbye")
-    	    exit
-    	  }
-    	println("Please add description of event")
-    	var eventDescription = readLine(); //get description of event
-    	if(eventDescription == "quit"){ //if user enters quit
-    	println("goodbye")
-    	exit
-    	  }
-    	println("Please add name of street for event")
-    	var eventStreet = readLine(); //get street name of event
-    	if(eventStreet == "quit"){ //if user enters quit
-    	println("goodbye")
-    	exit
-    	  }    	
-     	println("Please add name of city for event")
-    	var eventCity = readLine();  //get city of event
-    	if(eventCity == "quit"){ //if user enters quit
-    	println("goodbye")
-    	exit
-    	  } 
-    	println("Please add state of event")
-    	var eventState = readLine(); //get state of event
-    	if(eventState == "quit"){ //if user enters quit
-    	println("goodbye")
-    	exit
-    	  }    	
-    	println("Please add zip code of event")
-    	var eventZipCode = readLine(); //get zip code of event
-    	if(eventZipCode == "quit"){ //if user enters quit
-    	println("goodbye")
-    	exit
-    	  }
-    	println("Please add day of event in integer form")
-    	var eventDate= readLine(); //get day of event
-    	if(eventDate == "quit"){ //if user enters quit
-    	println("goodbye")
-    	exit
-    	  } 
-    	println("Please add time of event in integer form")
-    	var eventTime = readLine(); //get time of event
-    	if(eventTime == "quit"){ //if user enters quit
-    	println("goodbye")
-    	exit
-    	  }
-    	(reg_events.reg_events_title ~ reg_events.reg_events_pitch ~ reg_events.reg_events_description ~ reg_events.reg_events_street ~ reg_events.reg_events_city ~ reg_events.reg_events_state ~ reg_events.reg_events_zip ~ reg_events.reg_events_day ~ reg_events.reg_events_time).insert(eventname, eventPitch, eventDescription, eventStreet, eventCity, eventState, eventZipCode, eventDate, eventTime) // add values to table 
-    	valid = true // exit loop 
-//    	  val eventQuery: Query[Column[Int], String] = reg_events.filter[(reg_events_id).filter(reg_events_title == eventname).filter(reg_events_pitch == eventPitch).filter(reg_events_description == eventDescription). filter(reg_events_street == eventStreet).filter( reg_events_city == eventCity).filter( reg_events_state == eventState).filter( reg_events_zip == eventZipCode).filter( reg_events_day == eventDate).filter( reg_events_time == eventTime)
-//    	    .filter( reg_events_up).filter( reg_events_down).filter( reg_events_total).filter( reg_events_tieBreaker).map(_.user_name)]
-    	//query database   	  
-    } while (!valid)	//while there is no valid answer, ask again
-
-  
-  
-  
-    
-    //logout
-    else if (mainOp == "5"){
-      println("\nlogging out"
-    		  "\nlogged out")
-      exit
-    }
-    
-    //other
-    else
-      println("invalid option")
-  } while (!valid)
-  
+	  
+	  //Login Menu
+	  var signInOp = ""	//signIn option (signin or register)
+	  var currUser = ""	//the currently signed in user
+	  var currUserID = 0
+	  do {
+		  println("=-=-= SuperMegaFunTime! =-=-=")
+		  println("to exit program, type exit.")
+		  println("1- signin")
+		  println("2- new user")
+		  signInOp = readLine()
 		  
-  
+		  if(signInOp == "1" || signInOp == "2") {
+			  //Signin Menu
+			  if (signInOp == "1") {		//user selected sign in
+			    currUser = login()
+			    valid = true
+			  } //end user signIn
+			  
+			  //Registration Menu
+			  else if(signInOp == "2") {	//user selected register
+				currUser = register()
+				valid = true
+			  } //end user registration
+			  
+			  //we now have a logged-in user
+			  currUserID = reg_users.filter(_.user_name === currUser).first()._1 //grab the id for this user
+			  
+			  
+			  
+			  
+			  
+			  
+			  
+			  //Main Menu
+			  var mainOp = ""
+			  valid = false
+			  do {
+			    println("\n=-=-=-= Main Menu =-=-=-=")
+				println("to exit program, type exit.")
+				println("1- Events")
+				println("2- Friends")
+				println("3- My Group")
+				println("4- Create Event")
+				println("5- Logout")
+				
+				mainOp = readLine()
+				//exit
+			    if(mainOp == "exit") {		//if user typed exit
+			      println("\ngoodbye")
+			      exit
+			    }
+			    
+			    //events
+			    else if(mainOp == "1") {	//if user selected events
+			      do {
+				      println("\n=-=-=-= Events =-=-=-=-=")
+				      println("to exit program, type exit.")
+				      println("0- back")
+				      //Construct query finding events
+				      val eventQuery = reg_events.sortBy(_.reg_events_id).map(_.reg_events_title)
+				      eventQuery.foreach(println) //cant figure out how to print this in a better way.... 
+				      val response = readLine()
+				      if(response == "exit") {		//if user typed exit
+				    	  println("\ngoodbye")
+				    	  exit
+				      }
+				      else if(response == "0")		//user selected back
+				          valid = true
+				      else
+				        println("invalid response")//else invalid response
+			      } while (!valid)
+			      valid = false
+			    } //end events
+			    
+			    
+			    //friends
+			    else if(mainOp == "2") {		//if user selected Friends
+			      do {
+				      println("\n=-=-=-= Friends =-=-=-=")
+				      println("to exit program, type exit.")
+				      println("0- back")
+				      //construct query finding my friends
+				      val friendQuery: Query[(Column[String]), (String)] = for {
+				        c <- contacts if c.contacts_owner_id === currUserID
+				        o <- c.contact
+				      } yield(o.user_name)
+				      friendQuery.foreach(println)
+			      
+				      val response = readLine()
+					  if(response == "exit") {		//if user typed exit
+					   	  println("\ngoodbye")
+					   	  exit
+					  }
+					  else if(response == "0")		//user selected back
+					      valid = true
+					  else
+					      println("invalid response")//else invalid response
+				  	  } while (!valid)
+				      valid = false
+			    }
+			    
+			    //My group
+			        else if(mainOp == "3") {		//if user selected My Group
+			      do {
+				      println("\n=-=-=-= My Group =-=-=-=")
+				      println("to exit program, type exit.")
+				      println("0- back")
+				      //construct query finding my group
+				      val sgroupQuery: Query[(Column[Int]), Int] = user_to_sgroup.filter(_.members_id === currUserID).map(_.sgroup_id)
+				      val sgroup_id = sgroupQuery.first()
+				      
+				      val nameQuery: Query[(Column[String]), String] = sgroup.filter(_.sgroup_id === sgroup_id).map(_.sgroup_name)
+				      val sgroup_name = nameQuery.first()
+				      println(sgroup_name)
+				      
+				      val memberQuery: Query[(Column[String]), (String)] = for {
+				        c <- user_to_sgroup if c.sgroup_id === sgroup_id
+				        o <- c.member
+				      } yield(o.user_name)
+				      memberQuery.foreach(println)
+			      
+				      val response = readLine()
+					  if(response == "exit") {		//if user typed exit
+					   	  println("\ngoodbye")
+					   	  exit
+					  }
+					  else if(response == "0")		//user selected back
+					      valid = true
+					  else
+					      println("invalid response")//else invalid response
+				  	  } while (!valid)
+				      valid = false
+			    }
+			    
+			    
+			    
+			    //Create Event
+			        else if (mainOp == "4") {
+					    do{
+					    	println("\n=-=-=-= Create Event =-=-=-=")
+					    	println("to exit program, type exit.")
+					    	println("enter event name:")
+					    	var eventname = readLine();	//get group number
+					    	if(eventname == "exit") {	//if user enters quit
+					    	  println("goodbye!")
+							  exit
+					    	}
+					    	
+					    	println("Please add description of event")
+					    	var eventDescription = readLine(); //get description of event
+					    	if(eventDescription == "quit"){ //if user enters quit
+					    		println("goodbye")
+					    		exit
+					    	}
+					    	println("Please add name of street for event")
+					    	var eventStreet = readLine(); //get street name of event
+					    	if(eventStreet == "quit"){ //if user enters quit
+					    		println("goodbye")
+					    		exit
+					    	}    	
+					     	println("Please add name of city for event")
+					    	var eventCity = readLine();  //get city of event
+					    	if(eventCity == "quit"){ //if user enters quit
+					    		println("goodbye")
+					    		exit
+					    	} 
+					    	println("Please add state of event")
+					    	var eventState = readLine(); //get state of event
+					    	if(eventState == "quit"){ //if user enters quit
+					    		println("goodbye")
+					    		exit
+					    	}    	
+					    	println("Please add zip code of event")
+					    	var eventZipCode = readLine(); //get zip code of event
+					    	if(eventZipCode == "quit"){ //if user enters quit
+					    		println("goodbye")
+					    		exit
+					    	}
+					    	println("Please add day of event in integer form")
+					    	var eventDate= readLine(); //get day of event
+					    	if(eventDate == "quit"){ //if user enters quit
+					    		println("goodbye")
+					    		exit
+					    	} 
+					    	println("Please add time of event in integer form")
+					    	var eventTime = readLine(); //get time of event
+					    	if(eventTime == "quit"){ //if user enters quit
+					    		println("goodbye")
+					    		exit
+					    	}
+					    	//(reg_events.reg_events_title ~ reg_events.reg_events_pitch ~ reg_events.reg_events_description ~ reg_events.reg_events_street ~ reg_events.reg_events_city ~ reg_events.reg_events_state ~ reg_events.reg_events_zip ~ reg_events.reg_events_day ~ reg_events.reg_events_time).insert(eventname, eventPitch, eventDescription, eventStreet, eventCity, eventState, eventZipCode, eventDate, eventTime) // add values to table 
+					    	valid = true // exit loop 
+					//    	  val eventQuery: Query[Column[Int], String] = reg_events.filter[(reg_events_id).filter(reg_events_title == eventname).filter(reg_events_pitch == eventPitch).filter(reg_events_description == eventDescription). filter(reg_events_street == eventStreet).filter( reg_events_city == eventCity).filter( reg_events_state == eventState).filter( reg_events_zip == eventZipCode).filter( reg_events_day == eventDate).filter( reg_events_time == eventTime)
+					//    	    .filter( reg_events_up).filter( reg_events_down).filter( reg_events_total).filter( reg_events_tieBreaker).map(_.user_name)]
+					    	//query database  
+					    	println("created new event (just kidding)")
+					    } while (!valid)	//while there is no valid answer, ask again
+					    valid = false
+			        } //end create event
+			  
+			  
+			  
+			    
+			    //logout
+			    else if (mainOp == "5"){
+			      println(  "\nlogging out..." 
+			    		  + "\nlogged out")
+			      valid = true
+			    }
+			    
+			    //other
+			    else
+			      println("invalid option")
+			      
+			  } while (!valid) //end main OP
+			  valid = false
+			  
+			  
+			  
+			  
+			  
+			  
+			  
+			  
+			  
+		  }
+		  else if(signInOp == "exit"){ 		//signin option quit
+			  println("goodbye!")
+			  exit
+		  }
+		  else								//invalid sign in option
+		    println("\ninvalid option.")
+		    
+	  } while (!valid)
+	  
+	  
+	  
+			  
+  } while(!valid) //end UI
   
   
   println("DONE")   
