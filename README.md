@@ -21,4 +21,6 @@ https://typesafe.com/platform/getstarted
 6. follow Typesafe's instructions for importing the project into Eclipse.
 7. run smft.scala in Eclipse
 
+*you should have the scala plugin installed in Eclipse
+
 -enjoy!
