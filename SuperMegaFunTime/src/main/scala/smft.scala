@@ -245,7 +245,7 @@ object modSlick extends App {
 	      
 	    //reg_users += (1, username, password, email)	//add this user to the table
 	    												//ERROR: PRIMARY_KEY_VIOLATION
-	    println("\nuser " + username + " created. (well not really. TODO: we need to figure out primary key autogen)")
+	    println("\nuser " + username + " created. (well, not really. This will be implemented in version 2.0)")
 	    println("Welcome to SMFT!")
 	    return username
     } //end register method
@@ -457,7 +457,7 @@ object modSlick extends App {
 					//    	  val eventQuery: Query[Column[Int], String] = reg_events.filter[(reg_events_id).filter(reg_events_title == eventname).filter(reg_events_pitch == eventPitch).filter(reg_events_description == eventDescription). filter(reg_events_street == eventStreet).filter( reg_events_city == eventCity).filter( reg_events_state == eventState).filter( reg_events_zip == eventZipCode).filter( reg_events_day == eventDate).filter( reg_events_time == eventTime)
 					//    	    .filter( reg_events_up).filter( reg_events_down).filter( reg_events_total).filter( reg_events_tieBreaker).map(_.user_name)]
 					    	//query database  
-					    	println("created new event (just kidding)")
+					    	println("created new event (well, not really. This will be implemented in version 2.0)")
 					    } while (!valid)	//while there is no valid answer, ask again
 					    valid = false
 			        } //end create event
