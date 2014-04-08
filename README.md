@@ -1,7 +1,7 @@
-SuperMegaFunTime
-================
+#SuperMegaFunTime
+-------
 
-### Never be somewhere socially irrelevent... ever.
+#### Never be somewhere socially irrelevent... ever.
 
 Project to set up the back-end database for the SuperMegaFunTime app.
 
@@ -19,6 +19,7 @@ Events have a title, pitch, description, location, picture, date, down values, u
 
 This release of the program implements the structure of the database tables and their relational mapping. A simple user interface is provided to allow a user to log in as one of the registered users and view the information in the tables. Creation of new table data will be implemented in version 2.0. 
 
+
 -------
 
 ###Compilation instructions:
@@ -35,4 +36,16 @@ https://typesafe.com/platform/getstarted
 
 *you should have the scala plugin installed in Eclipse
 
--enjoy!
+-----
+
+#####For testing, you may log in as the following users:   
+######username - password
+paul - iamawesome  
+laura - 123  
+molly - 123  
+jasper - 123  
+sat - 123  
+
+-----
+
+~enjoy!
