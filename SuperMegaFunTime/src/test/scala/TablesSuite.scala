@@ -4,7 +4,7 @@ import scala.slick.jdbc.meta._
 
 
 class TablesSuite extends FunSuite with BeforeAndAfter {
-
+/*
   val suppliers = TableQuery[Suppliers]
   val coffees = TableQuery[Coffees]
   
@@ -46,5 +46,5 @@ class TablesSuite extends FunSuite with BeforeAndAfter {
   after {
     session.close()
   }
-
+*/
 }
