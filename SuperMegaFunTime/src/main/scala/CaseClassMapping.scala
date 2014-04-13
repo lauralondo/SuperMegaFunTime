@@ -1,5 +1,4 @@
 import scala.slick.driver.H2Driver.simple._
-<<<<<<< HEAD
 import scala.slick.lifted.{ProvenShape, ForeignKeyQuery}
 
 object CaseClassMapping extends App {
@@ -296,9 +295,3 @@ class eventList_table(tag: Tag) extends Table[eventList_cc](tag, "LISTOF_EVENTS"
 
 
 
-=======
-
-object CaseClassMapping extends App {
-
-}
->>>>>>> d8c80313f08aba6216edf6cf7f0e6cf922a5c8d9
