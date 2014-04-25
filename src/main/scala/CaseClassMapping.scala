@@ -7,19 +7,21 @@ object CaseClassMapping extends App {
   //ERROR:only classes can have declared but undefined members
   
   //The query interface for the * table
-  val user_query = TableQuery[user_table]
-  val event_query = TableQuery[event_table]
-  val sgroup_query = TableQuery[sgroup_table]
-  val contact_query = TableQuery[contact_table]
-  val sgroupMem_query = TableQuery[sgroupMem_table]
-  val eventList_query= TableQuery[eventList_table]
+  val user_query        = TableQuery[user_table]
+  val event_query       = TableQuery[event_table]
+  val sgroup_query      = TableQuery[sgroup_table]
+  val contact_query     = TableQuery[contact_table]
+  val sgroupMem_query   = TableQuery[sgroupMem_table]
+  val eventList_query   = TableQuery[eventList_table]
+  val sgroupInv_query   = TableQuery[sgroupInv_table]
+  val contactInv_query  = TableQuery[contactInv_table]
   
   //Create a connection (called a "session") to an in-memory H2 database
   Database.forURL("jdbc:h2:mem:hello", driver = "org.h2.Driver").withSession { implicit session =>
   
   //Create the schema by combining the DDLs for the tables using the query interfaces
   (user_query.ddl ++ event_query.ddl ++ sgroup_query.ddl ++ contact_query.ddl ++ 
-  sgroupMem_query.ddl ++ eventList_query.ddl).create
+  sgroupMem_query.ddl ++ eventList_query.ddl ++ sgroupInv_query.ddl ++ contactInv_query.ddl).create
 
 
   //Insert here
@@ -32,16 +34,16 @@ object CaseClassMapping extends App {
       )
   
   val event_insert: Option[Int] = event_query ++= Seq(
-      event_cc("TacoBell","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,0,0,0,0),
-      event_cc("Board Games","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,0,0,0,0),
-      event_cc("Star Trek","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,0,0,0,0),
-      event_cc("Comic Con","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,0,0,0,0),
-      event_cc("Chargers","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,0,0,0,0)
+      event_cc("TacoBell","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,0,0,0),
+      event_cc("Board Games","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,0,0,0),
+      event_cc("Star Trek","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,0,0,0),
+      event_cc("Comic Con","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,0,0,0),
+      event_cc("Chargers","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,0,0,0)
       )
       
   val sgroup_insert: Option[Int] = sgroup_query ++= Seq(
       sgroup_cc(1, "Paul's Group"),
-      sgroup_cc(3, "Molly's Group")
+      sgroup_cc(2, "Laura's Group")
       )
       
   val contact_insert: Option[Int] = contact_query ++= Seq(
@@ -61,6 +63,7 @@ object CaseClassMapping extends App {
       contact_cc(5,1)
       )
   val sgroupMem_insert: Option[Int] = sgroupMem_query ++= Seq(
+      sgroupMem_cc(1,1),
       sgroupMem_cc(1,2),
       sgroupMem_cc(1,4),
       sgroupMem_cc(1,5),
@@ -74,6 +77,11 @@ object CaseClassMapping extends App {
       eventList_cc(2,3),
       eventList_cc(2,4),
       eventList_cc(2,5)
+      )
+  
+  val contactInv_insert: Option[Int]= contactInv_query ++= Seq(
+      contactInv_cc(1,3),
+      contactInv_cc(5,3)
       )
   
   //print here
@@ -125,17 +133,490 @@ object CaseClassMapping extends App {
   } yield(e.event_title)
   
   println(joinQuery.list)
-
-
-
-
-
-
-
-
+  println("=-=-= SuperMegaFunTime! =-=-=")
   
   
   
+  //Start of UI
+    //login method
+    def login() : String =  {
+        
+        var valid = false
+    	var currUser = ""
+	    do{
+	    	println("\n=-=-=-= SignIn =-=-=-=")
+	    	println("to exit program, type exit.")
+	    	println("enter 0 to go back")
+	    	println("enter username:")
+	    	var username = readLine();	//get username
+	    	if(username == "exit") {	//if user enters quit
+	    	  
+	    	  println("goodbye!")
+			  exit
+	    	}
+	    	if(username == "0"){
+	    	    valid = true
+	    	}
+	    	if(valid == false){
+		    	println("enter password:")
+		    	var pass = readLine()		//get password
+		    	
+		    	//query database
+		    	val userQuery = user_query.filter(_.user_name === username).filter(_.user_password === pass).map(_.user_name)
+		    	if (userQuery.exists.run) { 	//check if there was a match
+		    	  currUser = userQuery.first 	//save currently signed-in user
+		    	  println("welcome back " + currUser + "!")
+		    	  valid = true
+		    	}
+		    	else{
+		    	  println("\nuser & password combination not found")
+		    	}
+	    	}
+	    } while (!valid)	//while there is no valid answer, ask again
+	    return currUser
+   }
+
+    
+    
+    //registration method
+    def register() : String = {
+    	var username = ""
+		var password = ""
+		var email = ""		  
+	    println("\n=-=-=-= SignUp =-=-=-=")
+	    println("to exit program, type exit.")
+	    println("0- back")
+	    
+        var back = false
+        
+	    
+        
+        //get username
+	    var valid = false
+        do {
+		    println("enter a new username")
+		    username = readLine().trim().toLowerCase()	//get username input
+		    val userQuery = user_query.filter(_.user_name === username).map(_.user_name) //check if username exists in database
+		    
+		    if(username == "exit") {				//user types quit
+		    	println("goodbye!")
+		    	exit									//end program
+		    }
+		    else if(username == "0"){
+		      return ""
+		    }
+		    else if(username.length() < 5){
+		      println("Username must be larger than 4 characters")
+		    }
+		    else if(!userQuery.exists.run)					//if username doesnt exist,
+		    	valid = true							//its valid
+		    else										//else username already exists
+		    	println("\nusername " + username + " already exists")
+	    } while(!valid)	//if the username is not valid, ask again   
+	    println("username: " + username)
+	    
+	    //get password
+	    var passMatch = false	//passwords match
+	    do {
+	    	//password input
+	    	valid = false
+		    do {
+		    	println("\nenter password")
+		    	password = readLine()						//get password input
+		    	if(password == "exit") {					//if user types quit
+		    		println("goodbye!")
+		    		exit									//end program
+		    	}
+		    	else if(password == "0"){
+		    		return ""
+		    	}
+		    	if(password.length() >= 3 && password.length() <= 16)	//if password is the correct length
+		    		valid = true										
+		    	else													//else invalid password
+		    		println("password must be betwee 3 and 16 characters.")
+		    } while(!valid)	//if the password is invalid, ask again
+		    
+		    //verify password
+		    println("retype password")
+		    val passRetype = readLine()		//get password again
+		    if(password == passRetype)		//if equal to previous,
+		    	passMatch = true			//its a match
+		    else
+		      println("passwords do not match.")    
+	    } while(!passMatch)	//if passwords dont match, ask again
+	          
+	    //get email
+	    valid = false
+	    do {
+		    println("\nenter e-mail address")
+		    email = readLine().trim()		//get email input
+		    val userQuery = user_query.filter(_.user_email === email).map(_.user_name) //check if email already in database
+		    if(email == "0"){
+		      return ""
+		    }
+		    else if(!userQuery.exists.run){		//if not in database,
+		    	valid = true					//it is a valid email
+		    }
+		    else if(email == "exit") {	//if user types quit
+		    	println("goodbye!")
+		    	exit						//exit program
+		    }
+		    else							//else email already in database
+		    	println("\nemail " + email + " already has an account.")
+	    } while(!valid)	//if the username is not valid, ask again
+	      
+	    println("email: " + email)
+	      
+	    user_query ++= Seq( user_cc(username, password, email))	//add this user to the table
+	    println("\nuser " + username + " created.")
+	    println("Welcome to SMFT!")
+	    return username
+    } //end register method
+    
+ 
+      var valid = false    //is it a valid response?
+	  do {
+	  
+	  valid = false    //is it a valid response?
+	
+	  
+	  //Login Menu
+	  var currGroupID = 0;
+	  var signInOp = ""	//signIn option (signin or register)
+	  var currUser = ""	//the currently signed in user
+	  var currUserID = 0
+	  do {
+	    do{
+		  println("=-=-= SuperMegaFunTime! =-=-=")
+		  println("to exit program, type exit.")
+		  println("1- signin")
+		  println("2- new user")
+		  signInOp = readLine()
+		  
+		  if(signInOp == "1" || signInOp == "2") {
+			  //Signin Menu
+			  if (signInOp == "1") {		//user selected sign in
+			    
+                currUser = login()
+			    valid = true
+			  } //end user signIn
+			  
+			  //Registration Menu
+			  else if(signInOp == "2") {	//user selected register
+				currUser = register()
+				valid = true
+			  } //end user registration
+			  
+			  
+		  }
+		  else if(signInOp == "exit"){ 		//signin option quit
+			  println("goodbye!")
+			  exit
+		  }
+		  else								//invalid sign in option
+		    println("\ninvalid option.")
+	    } while(currUser == "")
+	    	
+			  //Main Menu
+			  var mainOp = ""
+			  valid = false
+			  do {
+			  //we now have a logged-in user
+			  currUserID = user_query.filter(_.user_name === currUser).map(_.user_id).first() //grab the id for this user
+			  var something = sgroupMem_query.filter(_.member_id === currUserID).map(_.sgroup_id)
+			  //currGroupID = 
+			  if(something.exists.run){
+			    currGroupID = something.first()
+			  }
+			  else{
+			    currGroupID = -1
+			  }
+			    println("\n=-=-=-= Main Menu =-=-=-=")
+				println("to exit program, type exit.")
+				println("0- Logout")
+				println("1- Events")
+				println("2- Friends")
+				if(currGroupID == -1){
+				  println("3- Create A Group")
+				}
+				else{
+				  println("3- My Group")
+				}
+				println("4- Create Event")
+				var friendinvite = contactInv_query.filter(_.recip_id === currUserID)
+			    var groupinvite = sgroupInv_query.filter(_.recip_id === currUserID)
+				if(friendinvite.exists.run || groupinvite.exists.run){
+					println("5 - You've Got Mail")
+			    }
+			    
+				mainOp = readLine()
+				//exit
+			    if(mainOp == "exit") {		//if user typed exit
+			      println("\ngoodbye")
+			      exit
+			    }
+			    
+			    //events
+			    else if(mainOp == "1") {	//if user selected events
+			      do {
+				      println("\n=-=-=-= Events =-=-=-=-=")
+				      println("to exit program, type exit.")
+				      println("0- back")
+				      //Construct query finding events
+				      val eventQuery = event_query.sortBy(_.event_id).map(_.event_title)
+				      eventQuery.foreach(println) //cant figure out how to print this in a better way.... 
+				      val response = readLine()
+				      if(response == "exit") {		//if user typed exit
+				    	  println("\ngoodbye")
+				    	  exit
+				      }
+				      else if(response == "0")		//user selected back
+				          valid = true
+				      else
+				        println("invalid response")//else invalid response
+			      } while (!valid)
+			      valid = false
+			    } //end events
+			    
+			    
+			    //friends
+			    else if(mainOp == "2") {		//if user selected Friends
+			      do {
+				      println("\n=-=-=-= Friends =-=-=-=")
+				      println("to exit program, type exit.")
+				      println("0- back")
+				      println("1- Add A Friend")
+				      //construct query finding my friends
+				      val friendQuery: Query[(Column[String]), (String)] = for {
+				        c <- contact_query if c.contact_owner_id === currUserID
+				        o <- c.contact
+				      } yield(o.user_name)
+				      friendQuery.foreach(println)
+			      
+				      val response = readLine()
+					  if(response == "exit") {		//if user typed exit
+					   	  println("\ngoodbye")
+					   	  exit
+					  }
+					  else if(response == "0"){		//user selected back
+					      valid = true
+					  }
+					  else if(response == "1"){
+						  do{
+							var friendusername = "" 
+							println("Type in the username of the frined you wish to add")
+							friendusername = readLine().trim()
+							var friendnamecheck = user_query.filter(_.user_name === friendusername).map(_.user_id)
+							if (friendusername == "exit"){
+							  println("goodbye")
+							  exit
+							}
+							else if (friendusername == "0"){
+							  valid = true
+							}
+							else if(friendnamecheck.exists.run){
+							  contactInv_query ++= Seq( contactInv_cc(currUserID, friendnamecheck.first()))
+							  println("Friend Requst Sent")
+							  valid = true
+							}
+							else{
+							  println("User does not exist")
+							}
+						  } while(!valid)
+						 valid = false
+					  }
+					  else
+					      println("invalid response")//else invalid response
+				  	  } while (!valid)
+				      valid = false
+			    }
+			    
+			    //My group
+			        else if(mainOp == "3") {		//if user selected My Group
+			        
+			          if(currGroupID == -1){
+			            var valid = false
+			            do{
+			            var groupname = ""
+				            println("\n=-=-=-= Create A Group =-=-=-=")
+				            println("to exit program, type exit.")
+				            println("0- back")
+				            println("Enter the Group Name. Length 3-20")
+				            groupname = readLine().trim()
+			            if(groupname == "exit"){
+			              println("Goodbye")
+			              exit
+			            }
+			            else if(groupname == "0"){
+			              valid = true
+			            }
+			            else if(groupname.length() >= 3 && groupname.length() < 21){
+			              valid = true
+			              sgroup_query ++= Seq( sgroup_cc (currUserID, groupname))
+			              currGroupID = sgroup_query.filter(_.sgroup_lead === currUserID).map(_.sgroup_id).first()
+			              sgroupMem_query ++= Seq( sgroupMem_cc(currGroupID, currUserID))
+			            }
+			            else{
+			              println("Group Name Must Be 3-20 Characters")
+			            }
+			            }while(valid == false)
+			          }
+			          else{
+			          do {
+					      println("\n=-=-=-= My Group =-=-=-=")
+					      println("to exit program, type exit.")
+					      println("0- back")
+					      //construct query finding my group
+					      val sgroupQuery = sgroupMem_query.filter(_.member_id === currUserID).map(_.sgroup_id)
+					      val sgroup_id = sgroupQuery.first()
+					      
+					      val nameQuery = sgroup_query.filter(_.sgroup_id === sgroup_id).map(_.sgroup_name)
+					      val sgroup_name = nameQuery.first()
+					      println(sgroup_name)
+					      
+					      val memberQuery: Query[(Column[String]), (String)] = for {
+					        c <- sgroupMem_query if c.sgroup_id === sgroup_id
+					        o <- c.member
+					      } yield(o.user_name)
+					      memberQuery.foreach(println)
+				      
+					      val response = readLine()
+						  if(response == "exit") {		//if user typed exit
+						   	  println("\ngoodbye")
+						   	  exit
+						  }
+						  else if(response == "0")		//user selected back
+						      valid = true
+						  else
+						      println("invalid response")//else invalid response
+				  	  } while (!valid)
+			        }
+				      valid = false
+			    }
+			    
+			    
+			    
+			    //Create Event
+			        else if (mainOp == "4") {
+					    do{
+					    	println("\n=-=-=-= Create Event =-=-=-=")
+					    	println("to exit program, type exit.")
+					    	println("enter event name:")
+					    	var eventname = readLine();	//get group number
+					    	if(eventname == "exit") {	//if user enters quit
+					    	  println("goodbye!")
+							  exit
+					    	}
+					    	println("enter event name:")
+					    	var eventPitch = readLine();	//get group number
+					    	if(eventPitch == "exit") {	//if user enters quit
+					    	  println("goodbye!")
+							  exit
+					    	}
+					    	println("Please add description of event")
+					    	var eventDescription = readLine(); //get description of event
+					    	if(eventDescription == "quit"){ //if user enters quit
+					    		println("goodbye")
+					    		exit
+					    	}
+					    	println("Please add name of street for event")
+					    	var eventStreet = readLine(); //get street name of event
+					    	if(eventStreet == "quit"){ //if user enters quit
+					    		println("goodbye")
+					    		exit
+					    	}    	
+					     	println("Please add name of city for event")
+					    	var eventCity = readLine();  //get city of event
+					    	if(eventCity == "quit"){ //if user enters quit
+					    		println("goodbye")
+					    		exit
+					    	} 
+					    	println("Please add state of event")
+					    	var eventState = readLine(); //get state of event
+					    	if(eventState == "quit"){ //if user enters quit
+					    		println("goodbye")
+					    		exit
+					    	}    	
+					    	println("Please add zip code of event")
+					    	var eventZipCode = readLine(); //get zip code of event
+					    	if(eventZipCode == "quit"){ //if user enters quit
+					    		println("goodbye")
+					    		exit
+					    	}
+					    	println("Please add day of event in integer form")
+					    	var eventDate: String = readLine(); //get day of event
+					    	var eventDateInt: Int = eventDate.toInt;
+					    	if(eventDate == "quit"){ //if user enters quit
+					    		println("goodbye")
+					    		exit
+					    	} 
+					    	println("Please add time of event in integer form")
+					    	var eventTime: String = readLine(); //get time of event
+					    	var eventTimeInt: Int = eventTime.toInt;
+					    	if(eventTime == "quit"){ //if user enters quit
+					    		println("goodbye")
+					    		exit
+					    	}
+					    	event_query ++= Seq( event_cc(eventname, eventPitch, eventDescription, eventStreet, eventCity, eventState, eventZipCode, eventDateInt, eventTimeInt,0,0,0)) // add values to table
+					    	
+					    	valid = true // exit loop 
+					    	println("created new event...i think")
+					    } while (!valid)	//while there is no valid answer, ask again
+					    valid = false
+			        } //end create event
+				
+				//Notifications
+			    else if(mainOp == "5"){
+		    	do{
+		    		println("\n====You Have Mail From====")
+		    		println("to exit program, type exit.")
+		    		println("0- back")
+		    		
+		    		if(friendinvite.exists.run || groupinvite.exists.run){
+		    			val friendinviteQuery: Query[(Column[String]), (String)] = for {
+		    				c <- contactInv_query if c.recip_id === currUserID
+		    						o <- c.contact_sender
+		    			} yield(o.user_name)
+		    			friendinviteQuery.foreach(println)	
+		    		}
+		    		var response = readLine().trim()
+		    		if (response == "exit"){
+		    		  println("Goodbye")
+		    		  exit
+		    		}
+		    		else if (response == "0"){
+		    		  valid = true
+		    		}
+		    	}while(!valid)
+			      valid = false
+			    }
+				
+				
+			    //logout
+			    else if (mainOp == "0"){
+			      println(  "\nlogging out..." 
+			    		  + "\nlogged out")
+			      valid = true
+			    }
+			    
+			    //other
+			    else
+			      println("invalid option")
+			      
+			  } while (!valid) //end main OP
+			  valid = false
+			  
+		  
+		  
+		    
+	  } while(!valid)
+			  
+  } while(!valid) //end UI
+  
+  
+  println("DONE")
+  
+
   }//Ends Session
 }//Ends CassClassMapping
 
@@ -158,7 +639,6 @@ case class event_cc(
     event_time: Int, 
     event_up: Int, 
     event_down: Int, 
-    event_total: Int, 
     event_tieBreaker: Int, 
     event_id: Option[Int] = None
     )
@@ -182,6 +662,18 @@ case class eventList_cc(
     event_id: Int, 
     eventList_id: Option[Int] = None
     )
+case class sgroupInv_cc(
+    sgroup_id: Int,
+    sender_id: Int,
+    recip_id: Int,
+    invite_id: Option[Int] = None
+    )
+case class contactInv_cc(
+    sender_id: Int,
+    reciep_id: Int,
+    invite_id: Option[Int] = None
+    )
+
 
 ///////////////////////////////// Tables //////////////////////////////////////
 
@@ -211,10 +703,10 @@ class event_table(tag: Tag) extends Table[event_cc](tag, "EVENTS"){
     def event_time = column[Int]("EVENT_TIME")
     def event_up = column[Int]("EVENT_UP")
     def event_down = column[Int]("EVENT_DOWN")
-    def event_total = column[Int]("EVENT_TOTAL")
+
     def event_tieBreaker = column[Int]("EVENT_TIEBREAKER")
     
-    def *  = (event_title, event_pitch, event_description, event_street, event_city, event_state, event_zip, event_day, event_time, event_up, event_down, event_total, event_tieBreaker, event_id.?) <> (event_cc.tupled, event_cc.unapply)
+    def *  = (event_title, event_pitch, event_description, event_street, event_city, event_state, event_zip, event_day, event_time, event_up, event_down, event_tieBreaker, event_id.?) <> (event_cc.tupled, event_cc.unapply)
 }
 
 //A Social Group table with 5 columns: sgroup_id, sgroup_lead, sgroup_name, sgroup_members, sgroup_events
@@ -267,6 +759,36 @@ class eventList_table(tag: Tag) extends Table[eventList_cc](tag, "LISTOF_EVENTS"
     def sgroup: ForeignKeyQuery[sgroup_table, sgroup_cc] = foreignKey("EVENTS_TO_SGROUP", sgroup_id, TableQuery[sgroup_table])(_.sgroup_id)
     def event: ForeignKeyQuery[event_table, event_cc] = foreignKey("EVENTS_ID", event_id, TableQuery[event_table])(_.event_id)
 }
+
+//
+class sgroupInv_table(tag: Tag) extends Table[sgroupInv_cc](tag, "SOCIALGROUP_INVITE"){
+    def invite_id: Column[Int] = column[Int]("INVITE_ID", O.PrimaryKey, O.AutoInc)
+    def sgroup_id: Column[Int] = column[Int]("SGROUP_ID")
+    def sender_id: Column[Int] = column[Int]("SENDER_ID")
+    def recip_id: Column[Int] = column[Int]("RECIP_ID")
+    
+    def * = (sgroup_id, sender_id, recip_id, invite_id.?) <> (sgroupInv_cc.tupled, sgroupInv_cc.unapply)
+    
+    //Foreign Key(s)
+    def sgroup: ForeignKeyQuery[sgroup_table, sgroup_cc] = foreignKey("INVITE_TO_SGROUP", sgroup_id, TableQuery[sgroup_table])(_.sgroup_id)
+    def sgroupInv_sender: ForeignKeyQuery[user_table, user_cc] = foreignKey("SGROUP_INVITE_SENDER", sender_id, TableQuery[user_table])(_.user_id)
+    def sgroup_recip: ForeignKeyQuery[user_table, user_cc] = foreignKey("SGROUP_INVITE_RECIP", recip_id, TableQuery[user_table])(_.user_id)
+}
+
+//
+class contactInv_table(tag: Tag) extends Table[contactInv_cc](tag, "CONTACT_INVITE"){
+    def invite_id: Column[Int] = column[Int]("INVITE_ID", O.PrimaryKey, O.AutoInc)
+    def sender_id: Column[Int] = column[Int]("SENDER_ID")
+    def recip_id: Column[Int] = column[Int]("RECIP_ID")
+    
+    def * = (sender_id, recip_id, invite_id.?) <> (contactInv_cc.tupled, contactInv_cc.unapply)
+    
+    //Foreign Key(s)
+    def contact_sender: ForeignKeyQuery[user_table, user_cc] = foreignKey("CONTACT_INVITE_SENDER", sender_id, TableQuery[user_table])(_.user_id)
+    def contact_recip: ForeignKeyQuery[user_table, user_cc] = foreignKey("CONTACT_INVITE_RECIP", recip_id, TableQuery[user_table])(_.user_id)
+}
+
+
 
 
 
