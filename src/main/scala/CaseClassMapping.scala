@@ -34,11 +34,11 @@ object CaseClassMapping extends App {
       )
   
   val event_insert: Option[Int] = event_query ++= Seq(
-      event_cc("TacoBell","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,0,0,0),
-      event_cc("Board Games","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,0,0,0),
-      event_cc("Star Trek","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,0,0,0),
-      event_cc("Comic Con","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,0,0,0),
-      event_cc("Chargers","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,0,0,0)
+      event_cc("TacoBell","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,100,3,0),
+      event_cc("Board Games","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,10,7,0),
+      event_cc("Star Trek","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,50,5,0),
+      event_cc("Comic Con","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,1000,100,0),
+      event_cc("Chargers","PartyHard","Party with TacoBell","Balboa","San Diego","CA","92101", 0,21,500,120,0)
       )
       
   val sgroup_insert: Option[Int] = sgroup_query ++= Seq(
@@ -64,8 +64,7 @@ object CaseClassMapping extends App {
       )
   val sgroupMem_insert: Option[Int] = sgroupMem_query ++= Seq(
       sgroupMem_cc(1,1),
-      sgroupMem_cc(1,2),
-      sgroupMem_cc(1,4),
+      sgroupMem_cc(1,3),
       sgroupMem_cc(1,5),
       sgroupMem_cc(2,2),
       sgroupMem_cc(2,4)
@@ -93,7 +92,7 @@ object CaseClassMapping extends App {
   println(eventList_query.list)
   
   
-  /////////////////////////////// Queries ////////////////////////////////////////
+  /////////////////////////////// Test Queries ////////////////////////////////////////
 
 
 
@@ -137,7 +136,7 @@ object CaseClassMapping extends App {
   
   
   
-  //Start of UI
+  ////////////////////////////////////////////////////////////////Start of UI
     //login method
     def login() : String =  {
         
@@ -273,6 +272,68 @@ object CaseClassMapping extends App {
 	    return username
     } //end register method
     
+        //function tests whether the given string is a number				//ADDED-------------------------=================================
+    def isAnInt(str: String): Boolean = {
+    	try { //try to parse to int
+    	  str.toInt
+    	  return true
+    	}
+    	catch { //if it fails, return false -- it's not an int
+    	  case e: Exception => false
+    	}
+    } //end isNumeric
+    
+    
+    
+    //the event page view				//ADDED-------------------------=================================
+    def eventView( eventId:Int ) : Unit = {
+    	val eventQuery = event_query.filter(_.event_id === eventId) //search for the event
+    	
+    	if (!eventQuery.exists.run) { //if the event does not exist, print & return
+			println("There is no such event...")
+			return
+    	}
+    	else { //else the event does exist
+    		
+    		var valid = false
+	    	do{
+	    		val event = eventQuery.first()
+	    		println("\n=-=-=-= " + event.event_title + " =-=-=-=") 										//name
+	    		println(event.event_description) 																	//description
+	    		println("location: " + event.event_street + " " + event.event_city + " " + event.event_state + " " + event.event_zip) //place
+	    		println("time: " + event.event_time + " day: " + event.event_day) 										//time
+	    		println("up-votes: " + event.event_up + " | down-votes: " + event.event_down)					//votes
+	    		println("to exit program, type exit.")
+	    		println("0- back")
+	    		println("1- upvote")
+	    		println("2- downvote")
+	    		println("3- add to my group")
+	    		
+	    		var response = readLine().trim() //get response
+	    		if( response == "exit") { //exit
+	    		  println("Goodbye!")
+	    		  exit
+	    		}
+	    		else if (response == "0") { //back
+	    		  valid = true
+	    		}
+	    		else if(response == "1") { //upvote
+	    		  println("TODO: upvote this event")
+	    		}
+	    		else if( response == "2") { //down-vote
+	    			println("TODO: downvote this event")
+	    		}
+	    		else if( response == "3") { //add to group
+	    			println("TODO: add this event to the current user's group")
+	    		}
+	    		else { 						//else garbage response
+	    		  println("invalid response")
+	    		}
+	    	  
+	    	}while(!valid);
+    	} //end else
+    } //end eventView
+    
  
       var valid = false    //is it a valid response?
 	  do {
@@ -306,8 +367,6 @@ object CaseClassMapping extends App {
 				currUser = register()
 				valid = true
 			  } //end user registration
-			  
-			  
 		  }
 		  else if(signInOp == "exit"){ 		//signin option quit
 			  println("goodbye!")
@@ -317,6 +376,11 @@ object CaseClassMapping extends App {
 		    println("\ninvalid option.")
 	    } while(currUser == "")
 	    	
+	      
+	      
+	      
+	      
+	      
 			  //Main Menu
 			  var mainOp = ""
 			  valid = false
@@ -362,20 +426,40 @@ object CaseClassMapping extends App {
 				      println("\n=-=-=-= Events =-=-=-=-=")
 				      println("to exit program, type exit.")
 				      println("0- back")
+				      
 				      //Construct query finding events
-				      val eventQuery = event_query.sortBy(_.event_id).map(_.event_title)
-				      eventQuery.foreach(println) //cant figure out how to print this in a better way.... 
-				      val response = readLine()
-				      if(response == "exit") {		//if user typed exit
+				      val eventQuery = event_query.sortBy(_.event_up.desc) //all events sorted by up-vote
+				      
+				      //print event list menu
+				      var idArray = new Array[Int](eventQuery.length.run + 1) //create an array to store the event IDs
+				      var index = 1 				//index in the printout list and array
+				      for (event <- eventQuery) { 	//for every event,
+				    	  println(index + "- " + event.event_up + " " +  event.event_title + ": " + event.event_pitch) //print event info
+				    	  idArray(index) = event.event_id.get //add this event ID to the array
+				    	  index += 1 //increment index
+				      } //end for each event
+				      
+				      
+				      val response = readLine().trim() //get response
+				      if(response == "exit") {		   //if user typed exit
 				    	  println("\ngoodbye")
 				    	  exit
 				      }
-				      else if(response == "0")		//user selected back
+				      else if(response == "0") {	   //user selected back
 				          valid = true
-				      else
+				      }
+				      else if (isAnInt(response) && response.toInt <= eventQuery.length.run) { //response is an event number
+				    	  eventView(idArray(response.toInt))
+				        
+				      }
+				 
+				      else {
 				        println("invalid response")//else invalid response
+				      }
 			      } while (!valid)
 			      valid = false
+			    
+			    
 			    } //end events
 			    
 			    
@@ -450,6 +534,8 @@ object CaseClassMapping extends App {
 			            else if(groupname == "0"){
 			              valid = true
 			            }
+			            
+			            
 			            else if(groupname.length() >= 3 && groupname.length() < 21){
 			              valid = true
 			              sgroup_query ++= Seq( sgroup_cc (currUserID, groupname))
@@ -463,32 +549,101 @@ object CaseClassMapping extends App {
 			          }
 			          else{
 			          do {
-					      println("\n=-=-=-= My Group =-=-=-=")
-					      println("to exit program, type exit.")
-					      println("0- back")
-					      //construct query finding my group
+			        	  //construct query finding my group
 					      val sgroupQuery = sgroupMem_query.filter(_.member_id === currUserID).map(_.sgroup_id)
 					      val sgroup_id = sgroupQuery.first()
 					      
 					      val nameQuery = sgroup_query.filter(_.sgroup_id === sgroup_id).map(_.sgroup_name)
 					      val sgroup_name = nameQuery.first()
-					      println(sgroup_name)
+					      println("\n=-=-=-= " + sgroup_name + " =-=-=-=")
+					      println("to exit program, type exit.")
+					      println("0- back")
+					      println("1- members")
+					      println("2- events")
 					      
-					      val memberQuery: Query[(Column[String]), (String)] = for {
-					        c <- sgroupMem_query if c.sgroup_id === sgroup_id
-					        o <- c.member
-					      } yield(o.user_name)
-					      memberQuery.foreach(println)
-				      
 					      val response = readLine()
 						  if(response == "exit") {		//if user typed exit
 						   	  println("\ngoodbye")
 						   	  exit
 						  }
-						  else if(response == "0")		//user selected back
+						  else if(response == "0") {		//user selected back
 						      valid = true
-						  else
-						      println("invalid response")//else invalid response
+						  }
+					      else if(response == "1") {  //members     //ADDED-------------------------=================================
+							  do {
+								  println("=-=-=-= Members =-=-=-=")
+								  println("0- back")
+								  val memberQuery: Query[(Column[String]), (String)] = for {
+									  c <- sgroupMem_query if c.sgroup_id === sgroup_id
+									  o <- c.member
+								  } yield(o.user_name)
+								  memberQuery.foreach(println)
+								  
+								  var response = readLine().trim()
+								  if (response == "0") {
+								    valid = true
+								  }
+								  else {
+								    println("invalid response")
+								  }
+							  } while (!valid);
+							  valid = false
+						  }
+						  else if (response == "2") {
+						     do {
+							      println("\n=-=-=-= Group Events =-=-=-=-=")
+							      println("to exit program, type exit.")
+							      println("0- back")
+							      
+							      var eventQuery = for { //TODO: aaaaagghghghhghghgh
+									  c <- eventList_query if c.sgroup_id === sgroup_id
+									  o <- c.event
+								  } yield(o)
+								  eventQuery = eventQuery.sortBy(_.event_up.desc)
+								  //eventQuery.foreach(println)
+							      
+							      //Construct query finding events
+							      //val eventQuery = reg_events.filter(_.).sortBy(_.reg_events_up.desc) //all events sorted by up-vote
+							      
+							      //print event list menu
+							      var idArray = new Array[Int](eventQuery.length.run + 1) //create an array to store the event IDs
+							      var index = 1 				//index in the printout list and array
+							      for (event <- eventQuery) { 	//for every event,
+							    	  println(index + "- " + event.event_up + " " +  event.event_title + ": " + event.event_pitch) //print event info
+							    	  idArray(index) = event.event_id.get //add this event ID to the array
+							    	  index += 1 //increment index
+							      } //end for each event
+							      
+							      
+							      val response = readLine().trim() //get response
+							      if(response == "exit") {		   //if user typed exit
+							    	  println("\ngoodbye")
+							    	  exit
+							      }
+							      else if(response == "0") {	   //user selected back
+							          valid = true
+							      }
+							      else if (isAnInt(response) && response.toInt <= eventQuery.length.run) { //response is an event number
+							    	  eventView(idArray(response.toInt))
+							        
+							      }
+							 
+							      else {
+							        println("invalid response")//else invalid response
+							      }
+						      } while (!valid)
+						      valid = false
+						  }
+					      
+					      
+					      
+					      
+					     
+				      
+					     
+						  else{
+						    println("invalid response")//else invalid response
+						  }
 				  	  } while (!valid)
 			        }
 				      valid = false
@@ -507,7 +662,7 @@ object CaseClassMapping extends App {
 					    	  println("goodbye!")
 							  exit
 					    	}
-					    	println("enter event name:")
+					    	println("enter event pitch:")
 					    	var eventPitch = readLine();	//get group number
 					    	if(eventPitch == "exit") {	//if user enters quit
 					    	  println("goodbye!")
