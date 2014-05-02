@@ -319,8 +319,6 @@ object CaseClassMapping extends App {
 	    		  println("3- add to my group")
 	    		}
 	    	
-	    		
-	    		
 	    		var response = readLine().trim() //get response
 	    		if( response == "exit") { //exit
 	    		  println("Goodbye!")
@@ -330,15 +328,33 @@ object CaseClassMapping extends App {
 	    		  valid = true
 	    		}
 	    		else if(response == "1") { //upvote
-	    		  println("TODO: upvote this event")
+	    		  println("Event has been up-voted.")
+	    		  var voteUp = for {
+	    			  c <- event_query if c.event_id === eventId 
+	    		  } yield c.event_up
+	    		  val temp = event_query.filter(_.event_id === eventId).map(_.event_up).first() + 1
+	    		  voteUp.update(temp)
 	    		}
 	    		else if( response == "2") { //down-vote
-	    			println("TODO: downvote this event")
+	    			println("Event has been down-voted.")
+		    		var voteDown = for {
+		    			c <- event_query if c.event_id === eventId 
+		    		} yield c.event_down
+		    		val temp = event_query.filter(_.event_id === eventId).map(_.event_down).first() + 1
+		    		voteDown.update(temp)
 	    		}
-	    		else if( response == "3"  &&  myGroup != -1) { //add to group
-	    			eventList_query ++= Seq( eventList_cc(myGroup, eventId))  //TODO: handle multiple adds
-	    			println("Event added to your group!")
-	    			valid = true
+	    		else if( response == "3"  &&  myGroup != -1) { //add event to group
+	    			val eventQuery = eventList_query.filter(_.sgroup_id === myGroup).filter(_.event_id === eventId)
+	    			if(eventQuery.exists.run) {
+	    				println("this event is already in your group.")
+	    				
+	    			}
+	    			else {
+	    				eventList_query ++= Seq( eventList_cc(myGroup, eventId))
+	    				
+	    				println("Event added to your group!")
+	    			 
+	    			}
 	    		}
 	    		else { 						//else garbage response
 	    		  println("invalid response")
@@ -352,6 +368,9 @@ object CaseClassMapping extends App {
     def friendInvite(inviteId : Int) : Unit = {
     		var valid = false
     		do {
+    		  val invite = contactInv_query.filter(_.invite_id === inviteId).first()
+    		  
+    		  println("\n=-=-=-= Friend Invite =-=-=-=")
     		  println("Type exit to exit.")
     		  println("0- back")
     		  println("1- accept invitation")
@@ -366,7 +385,7 @@ object CaseClassMapping extends App {
     		    valid = true
     		  }
     		  else if(response == "1") { //accept invite
-    		    val invite = contactInv_query.filter(_.invite_id === inviteId).first()
+    		    
     		    
     		   val contact_insert: Option[Int] = contact_query ++= Seq(
     		    	contact_cc(invite.sender_id, invite.reciep_id),
@@ -374,11 +393,14 @@ object CaseClassMapping extends App {
     			)
     			
     			val senderName = user_query.filter(_.user_id === invite.sender_id).map(_.user_name).first()
+    			val invite2 = contactInv_query.filter(_.invite_id === inviteId).delete
     		    println(senderName + " is now your friend!")
     		    valid = true
     		  }
-    		  else if (response == "2") {
-    		    println("now pretending to delete your invite..... DONE.") //TODO: how do we delete stuff???
+    		  else if (response == "2") { //delete invite
+    		    val invite2 = contactInv_query.filter(_.invite_id === inviteId).delete
+    		    println("Invite deleted.") 
+    		    valid = true
     		  }
     		  else {
     		    println("Invalid response.")
@@ -395,12 +417,14 @@ object CaseClassMapping extends App {
 	
 	  
 	  //Login Menu
-	  var currGroupID = 0;
+	  var currGroupID = -1;
 	  var signInOp = ""	//signIn option (signin or register)
 	  var currUser = ""	//the currently signed in user
 	  //var currUserID = 0
 	  do {
 	    do{
+	      currUser = ""
+	      currGroupID = -1
 		  println("=-=-= SuperMegaFunTime! =-=-=")
 		  println("to exit program, type exit.")
 		  println("1- signin")
@@ -541,6 +565,9 @@ object CaseClassMapping extends App {
 					  else if(response == "1"){
 						  do{
 							var friendusername = "" 
+							println("\n=-=-=-= Add a Friend =-=-=-=")
+							println("type exit to exit the program")
+							println("0- back")
 							println("Type in the username of the friend you wish to add.")
 							friendusername = readLine().trim()
 							var friendId = user_query.filter(_.user_name === friendusername).map(_.user_id)
