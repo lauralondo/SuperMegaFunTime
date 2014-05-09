@@ -15,14 +15,13 @@ object CaseClassMapping extends App {
   val eventList_query   = TableQuery[eventList_table]
   val sgroupInv_query   = TableQuery[sgroupInv_table]
   val contactInv_query  = TableQuery[contactInv_table]
-  val vote_query        = TableQuery[vote_table]
   
   //Create a connection (called a "session") to an in-memory H2 database
   Database.forURL("jdbc:h2:mem:hello", driver = "org.h2.Driver").withSession { implicit session =>
   
   //Create the schema by combining the DDLs for the tables using the query interfaces
   (user_query.ddl ++ event_query.ddl ++ sgroup_query.ddl ++ contact_query.ddl ++ 
-  sgroupMem_query.ddl ++ eventList_query.ddl ++ sgroupInv_query.ddl ++ contactInv_query.ddl ++ vote_query.ddl).create
+  sgroupMem_query.ddl ++ eventList_query.ddl ++ sgroupInv_query.ddl ++ contactInv_query.ddl).create
 
 
   //Insert here
@@ -85,12 +84,12 @@ object CaseClassMapping extends App {
       )
   
   //print here
-  // println(user_query.list)
-  // println(event_query.list)
-  // println(sgroup_query.list)
-  // println(contact_query.list)
-  // println(sgroupMem_query.list)
-  // println(eventList_query.list)
+  println(user_query.list)
+  println(event_query.list)
+  println(sgroup_query.list)
+  println(contact_query.list)
+  println(sgroupMem_query.list)
+  println(eventList_query.list)
   
   
   /////////////////////////////// Test Queries ////////////////////////////////////////
@@ -99,40 +98,40 @@ object CaseClassMapping extends App {
 
   //val composedQuery
   //val namesQuery: Query[Column [String], String] = user_cc.sortBy(_.user_name).map(_.user_name)
-  // val namesQuery = user_query.sortBy(_.user_name).map(_.user_name)
-  // println(namesQuery.list)
+  val namesQuery = user_query.sortBy(_.user_name).map(_.user_name)
+  println(namesQuery.list)
   
   //Construct query finding events
   //val eventQuery: Query[Column[String], String] = reg_events.sortBy(_.reg_events_id).map(_.reg_events_title)
-  // val eventQuery = event_query.sortBy(_.event_id).map(_.event_title)
-  // println(eventQuery.list)
+  val eventQuery = event_query.sortBy(_.event_id).map(_.event_title)
+  println(eventQuery.list)
   
   //Constrct query finding sgroup
   //val sgroupQuery: Query[Column[Int], Int] = sgroup.sortBy(_.sgroup_id).map(_.sgroup_lead)
-  // val sgroupQuery = sgroup_query.sortBy(_.sgroup_id).map(_.sgroup_lead)
-  // println(sgroupQuery.list)
+  val sgroupQuery = sgroup_query.sortBy(_.sgroup_id).map(_.sgroup_lead)
+  println(sgroupQuery.list)
   
   //Construct query finding contacts of user
   //val contactsQuery: Query[Column[Int], Int] = contacts.filter(_.contacts_owner_id === 2).map(_.contactto_owner_id)
-  // val contactsQuery = contact_query.filter(_.contact_owner_id === 2).map(_.contactto_owner_id)
-  // println(contactsQuery.list)
+  val contactsQuery = contact_query.filter(_.contact_owner_id === 2).map(_.contactto_owner_id)
+  println(contactsQuery.list)
   
   //Construct query finding contacts of user
   //val userToSgroupQuery: Query[Column[Int], Int] = user_to_sgroup.sortBy(_.user_to_sgroup_id).map(_.user_to_sgroup_id)
-  // val userToSgroupQuery = sgroupMem_query.sortBy(_.sgroup_id).map(_.sgroup_id)
-  // println(userToSgroupQuery.list)
+  val userToSgroupQuery = sgroupMem_query.sortBy(_.sgroup_id).map(_.sgroup_id)
+  println(userToSgroupQuery.list)
   
   //val joinQuery: Query[(Column[String]), (String)] = for {
   //   g <- listof_events if g.sgroup_id === 1 //get the sgroup
   //   e <- g.events
   //} yield(e.reg_events_title)
   
-  // val joinQuery = for{
-  //     g <- eventList_query if g.sgroup_id === 1
-  //     e <- g.event
-  // } yield(e.event_title)
-  // 
-  // println(joinQuery.list)
+  val joinQuery = for{
+      g <- eventList_query if g.sgroup_id === 1
+      e <- g.event
+  } yield(e.event_title)
+  
+  println(joinQuery.list)
   println("=-=-= SuperMegaFunTime! =-=-=")
   
   
@@ -146,7 +145,7 @@ object CaseClassMapping extends App {
     def login() : String =  {
         
         var valid = false
-        var currUser = ""
+    	var currUser = ""
 	    do{
 	    	println("\n=-=-=-= SignIn =-=-=-=")
 	    	println("to exit program, type exit.")
@@ -367,6 +366,62 @@ object CaseClassMapping extends App {
 	    	}while(!valid);
     	} //end else
     } //end eventView
+    
+    
+    
+    def userView(userId : Int) : Unit = {
+      var valid = false
+      do {
+        val userQuery = user_query.filter(_.user_id === userId) 			    //search for the viewed user
+        if(userQuery.exists.run) { //if the viewed user exists
+        	val groupQuery = sgroupMem_query.filter(_.member_id === currUserID) //search for the current user's group
+        	val user = userQuery.first()                                        //get the viewed user
+        	println("\n=-=-=-= " + user.user_name + "=-=-=-=")
+		    println("type exit to exit")
+		    println("0- back")
+		    
+	        if(groupQuery.exists.run) { 	   //if current user is in a group
+	        	val currGroupId = groupQuery.first().sgroup_id       //get the current user's group id
+	        	var groupRemOrAdd = false                              //boolean whether we can remove or add the viewed user to the group
+	        	var contactRemOrAdd = false
+	        	
+		        val inGroupQuery =  sgroupMem_query.filter(_.member_id === user.user_id)        //find the viewed user's group
+		        if (inGroupQuery.exists.run && inGroupQuery.first().sgroup_id == currGroupId) { //if the viewed user is in a group and is in the same group as the current user
+		        	println("1- remove from group")
+		            groupRemOrAdd = false        //we will have the option to remove the viewed user from the group
+		        }
+		        else {                         //else the viewed user is not in the current user's group
+		        	println("1- invite to group")
+		            groupRemOrAdd = true         //we will have the option to invite the viewed user to the group
+		        }
+		        
+		        val contactQuery = contact_query.filter(_.contact_owner_id === currUserID).filter(_.contact_id === user.user_id) //find if the current user know the viewed user
+		        if (contactQuery.exists.run) {        //if the viewed user is a contact with the current user
+		          println("2- remove friend")
+		          contactRemOrAdd = false
+		        }
+		        else { //else the current user does not know the viewed user
+		          println("2- send friend request")
+		          contactRemOrAdd = true
+		        }
+		        
+		        
+		        
+		        
+		        
+		        
+	        } //end if user exists
+	        else {
+	          
+	        }
+        }
+        else { //else the viewed user does not exist
+          println("ERROR: User# " + userId + " does not exist.")
+        }
+
+      } while (!valid)
+    }
+    
     
     
     def friendInvite(inviteId : Int) : Unit = {
@@ -658,14 +713,14 @@ object CaseClassMapping extends App {
 					      println("2- events")
 					      
 					      val response = readLine()
-						  if(response == "exit") {		//if user typed exit
+						  if(response == "exit") {			//if user typed exit
 						   	  println("\ngoodbye")
 						   	  exit
 						  }
 						  else if(response == "0") {		//user selected back
 						      valid = true
 						  }
-					      else if(response == "1") {  //members     //ADDED-------------------------=================================
+					      else if(response == "1") {  		//group members    
 							  do {
 								  println("=-=-=-= Members =-=-=-=")
 								  println("0- back")
@@ -685,7 +740,7 @@ object CaseClassMapping extends App {
 							  } while (!valid);
 							  valid = false
 						  }
-						  else if (response == "2") {
+						  else if (response == "2") {		//group events
 						     do {
 							      println("\n=-=-=-= Group Events =-=-=-=-=")
 							      println("to exit program, type exit.")
@@ -959,8 +1014,6 @@ case class sgroupMem_cc(
 case class eventList_cc(
     sgroup_id: Int, 
     event_id: Int, 
-    vote_up: Option[Int] = None,
-    vote_down: Option[Int] = None,
     eventList_id: Option[Int] = None
     )
 case class sgroupInv_cc(
@@ -974,20 +1027,16 @@ case class contactInv_cc(
     reciep_id: Int,
     invite_id: Option[Int] = None
     )
-case class vote_cc(
-    voter_id: Int,
-    vote_status: Boolean,
-    vote_id: Option[Int] = None
-    )
+
 
 ///////////////////////////////// Tables //////////////////////////////////////
 
 //A User table with 4 columns: user_id, user_name, user_password, user_email
 class user_table(tag: Tag) extends Table[user_cc](tag, "REG_USERS"){
-    def user_id         = column[Int]("USER_ID", O.PrimaryKey, O.AutoInc) // This is the primary key column
-    def user_name       = column[String]("USER_NAME")
-    def user_password   = column[String]("USER_PASSWORD")
-    def user_email      = column[String]("USER_EMAIL")
+    def user_id = column[Int]("USER_ID", O.PrimaryKey, O.AutoInc) // This is the primary key column
+    def user_name = column[String]("USER_NAME")
+    def user_password = column[String]("USER_PASSWORD")
+    def user_email = column[String]("USER_EMAIL")
     
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (user_name, user_password, user_email, user_id.?) <> (user_cc.tupled, user_cc.unapply)
@@ -996,18 +1045,18 @@ class user_table(tag: Tag) extends Table[user_cc](tag, "REG_USERS"){
 //An Events table with 14 columns: event_id, event_title, event_pitch, event_description, event_street, event_city, 
 //event_state, event_zip, event_day, event_time, event_up, event_down
 class event_table(tag: Tag) extends Table[event_cc](tag, "EVENTS"){
-    def event_id        = column[Int]("EVENT_ID", O.PrimaryKey, O.AutoInc) //Primary Key
-    def event_title     = column[String]("EVENT_TITLE")
-    def event_pitch     = column[String]("EVENT_PITCH")
+    def event_id = column[Int]("EVENT_ID", O.PrimaryKey, O.AutoInc) //Primary Key
+    def event_title = column[String]("EVENT_TITLE")
+    def event_pitch = column[String]("EVENT_PITCH")
     def event_description = column[String]("EVENT_DESCRIPTION")
-    def event_street    = column[String]("EVENT_STREET")
-    def event_city      = column[String]("EVENT_CITY")
-    def event_state     = column[String]("EVENT_STATE")
-    def event_zip       = column[String]("EVENT_ZIP")
-    def event_day       = column[Int]("EVENT_DAY")
-    def event_time      = column[Int]("EVENT_TIME")
-    def event_up        = column[Int]("EVENT_UP")
-    def event_down      = column[Int]("EVENT_DOWN")
+    def event_street = column[String]("EVENT_STREET")
+    def event_city = column[String]("EVENT_CITY")
+    def event_state = column[String]("EVENT_STATE")
+    def event_zip = column[String]("EVENT_ZIP")
+    def event_day = column[Int]("EVENT_DAY")
+    def event_time = column[Int]("EVENT_TIME")
+    def event_up = column[Int]("EVENT_UP")
+    def event_down = column[Int]("EVENT_DOWN")
 
     def event_tieBreaker = column[Int]("EVENT_TIEBREAKER")
     
@@ -1016,9 +1065,9 @@ class event_table(tag: Tag) extends Table[event_cc](tag, "EVENTS"){
 
 //A Social Group table with 5 columns: sgroup_id, sgroup_lead, sgroup_name, sgroup_members, sgroup_events
 class sgroup_table(tag : Tag) extends Table[sgroup_cc](tag, "SOCIALGROUP"){
-    def sgroup_id: Column[Int]          = column[Int]("SGROUP_ID", O.PrimaryKey, O.AutoInc) //Primary Key
-    def sgroup_lead: Column[Int]        = column[Int]("SGROUP_LEADER")
-    def sgroup_name: Column[String]     = column[String]("SGROUP_NAME")
+    def sgroup_id: Column[Int] = column[Int]("SGROUP_ID", O.PrimaryKey, O.AutoInc) //Primary Key
+    def sgroup_lead: Column[Int] = column[Int]("SGROUP_LEADER")
+    def sgroup_name: Column[String] = column[String]("SGROUP_NAME")
     
     def * = (sgroup_lead, sgroup_name, sgroup_id.?) <> (sgroup_cc.tupled, sgroup_cc.unapply)
     
@@ -1028,8 +1077,8 @@ class sgroup_table(tag : Tag) extends Table[sgroup_cc](tag, "SOCIALGROUP"){
 
 //A Contacts table with 2 columns:
 class contact_table(tag : Tag) extends Table[contact_cc](tag, "CONTACTS"){
-    def contact_id: Column[Int]         = column("CONTACT_ID", O.PrimaryKey, O.AutoInc)
-    def contact_owner_id: Column[Int]   = column[Int]("CONTACTS_OWNER")
+    def contact_id: Column[Int] = column("CONTACT_ID", O.PrimaryKey, O.AutoInc)
+    def contact_owner_id: Column[Int] = column[Int]("CONTACTS_OWNER")
     def contactto_owner_id: Column[Int] = column[Int]("CONTACTTO_OWNER")
     
     def * = (contact_owner_id, contactto_owner_id, contact_id.?) <> (contact_cc.tupled, contact_cc.unapply)
@@ -1041,9 +1090,9 @@ class contact_table(tag : Tag) extends Table[contact_cc](tag, "CONTACTS"){
 
 //A Members table with 2 columns:
 class sgroupMem_table(tag: Tag) extends Table[sgroupMem_cc](tag, "USER_TO_SGROUP"){
-    def sgroupMem_id: Column[Int]   = column[Int]("ROW_ID", O.PrimaryKey, O.AutoInc)
-    def sgroup_id: Column[Int]      = column[Int]("SGROUP_ID")
-    def member_id: Column[Int]      = column[Int]("MEMBERS_ID")
+    def sgroupMem_id: Column[Int] = column[Int]("ROW_ID", O.PrimaryKey, O.AutoInc)
+    def sgroup_id: Column[Int] = column[Int]("SGROUP_ID")
+    def member_id: Column[Int] = column[Int]("MEMBERS_ID")
     
     def * = (sgroup_id, member_id, sgroupMem_id.?) <> (sgroupMem_cc.tupled, sgroupMem_cc.unapply)
     
@@ -1054,13 +1103,11 @@ class sgroupMem_table(tag: Tag) extends Table[sgroupMem_cc](tag, "USER_TO_SGROUP
 
 //A Events table with 2 columns:
 class eventList_table(tag: Tag) extends Table[eventList_cc](tag, "LISTOF_EVENTS"){
-    def eventList_id: Column[Int]   = column[Int]("LISTOF_EVENTS_ID", O.PrimaryKey, O.AutoInc)
-    def sgroup_id: Column[Int]      = column[Int]("SGROUP_ID")
-    def event_id: Column[Int]       = column[Int]("EVENTS_ID")
-    def vote_up: Column[Int]        = column[Int]("VOTE_UP")
-    def vote_down: Column[Int]      = column[Int]("VOTE_DOWN")
+    def eventList_id: Column[Int] = column[Int]("LISTOF_EVENTS_ID", O.PrimaryKey, O.AutoInc)
+    def sgroup_id: Column[Int] = column[Int]("SGROUP_ID")
+    def event_id: Column[Int] = column[Int]("EVENTS_ID")
     
-    def * = (sgroup_id, event_id, vote_up.?, vote_down.?, eventList_id.?) <> (eventList_cc.tupled, eventList_cc.unapply)
+    def * = (sgroup_id, event_id, eventList_id.?) <> (eventList_cc.tupled, eventList_cc.unapply)
     
     //Foreign Key(s)
     def sgroup: ForeignKeyQuery[sgroup_table, sgroup_cc] = foreignKey("EVENTS_TO_SGROUP", sgroup_id, TableQuery[sgroup_table])(_.sgroup_id)
@@ -1069,10 +1116,10 @@ class eventList_table(tag: Tag) extends Table[eventList_cc](tag, "LISTOF_EVENTS"
 
 //
 class sgroupInv_table(tag: Tag) extends Table[sgroupInv_cc](tag, "SOCIALGROUP_INVITE"){
-    def invite_id: Column[Int]      = column[Int]("INVITE_ID", O.PrimaryKey, O.AutoInc)
-    def sgroup_id: Column[Int]      = column[Int]("SGROUP_ID")
-    def sender_id: Column[Int]      = column[Int]("SENDER_ID")
-    def recip_id: Column[Int]       = column[Int]("RECIP_ID")
+    def invite_id: Column[Int] = column[Int]("INVITE_ID", O.PrimaryKey, O.AutoInc)
+    def sgroup_id: Column[Int] = column[Int]("SGROUP_ID")
+    def sender_id: Column[Int] = column[Int]("SENDER_ID")
+    def recip_id: Column[Int] = column[Int]("RECIP_ID")
     
     def * = (sgroup_id, sender_id, recip_id, invite_id.?) <> (sgroupInv_cc.tupled, sgroupInv_cc.unapply)
     
@@ -1084,9 +1131,9 @@ class sgroupInv_table(tag: Tag) extends Table[sgroupInv_cc](tag, "SOCIALGROUP_IN
 
 //
 class contactInv_table(tag: Tag) extends Table[contactInv_cc](tag, "CONTACT_INVITE"){
-    def invite_id: Column[Int]      = column[Int]("INVITE_ID", O.PrimaryKey, O.AutoInc)
-    def sender_id: Column[Int]      = column[Int]("SENDER_ID")
-    def recip_id: Column[Int]       = column[Int]("RECIP_ID")
+    def invite_id: Column[Int] = column[Int]("INVITE_ID", O.PrimaryKey, O.AutoInc)
+    def sender_id: Column[Int] = column[Int]("SENDER_ID")
+    def recip_id: Column[Int] = column[Int]("RECIP_ID")
     
     def * = (sender_id, recip_id, invite_id.?) <> (contactInv_cc.tupled, contactInv_cc.unapply)
     
@@ -1095,17 +1142,9 @@ class contactInv_table(tag: Tag) extends Table[contactInv_cc](tag, "CONTACT_INVI
     def contact_recip: ForeignKeyQuery[user_table, user_cc] = foreignKey("CONTACT_INVITE_RECIP", recip_id, TableQuery[user_table])(_.user_id)
 }
 
-//
-class vote_table(tag: Tag) extends Table[vote_cc](tag, "VOTE"){
-    def vote_id: Column[Int]            = column[Int]("VOTE_ID", O.PrimaryKey, O.AutoInc)
-    def user_id: Column[Int]            = column[Int]("USER_ID")
-    def vote_status: Column[Boolean]    = column[Boolean]("VOTE_UP_STATUS")
-    
-    def * = (user_id, vote_status, vote_id.?) <> (vote_cc.tupled, vote_cc.unapply)
-    
-    //Foreign Key(s)
-    def voter: ForeignKeyQuery[user_table, user_cc] = foreignKey("VOTER", user_id, TableQuery[user_table])(_.user_id)
-}
+
+
+
 
 
 
