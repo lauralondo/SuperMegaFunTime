@@ -302,8 +302,8 @@ object CaseClassMapping extends App {
     		var valid = false
 	    	do{
 	    		val event = eventQuery.first()
-	    		var myGroup = -1
-	    		val groupQuery = sgroupMem_query.filter(_.member_id === currUserID)
+	    		var myGroupId = -1
+	    		val groupQuery = sgroupMem_query.filter(_.member_id === currUserID) //find the current user's group
 	    		
 	    		println("\n=-=-=-= " + event.event_title + " =-=-=-=") 										//name
 	    		println(event.event_description) 																	//description
@@ -314,9 +314,12 @@ object CaseClassMapping extends App {
 	    		println("0- back")
 	    		println("1- upvote")
 	    		println("2- downvote")
-	    		if (groupQuery.exists.run) {
-	    		  myGroup = groupQuery.first().sgroup_id
-	    		  println("3- add to my group")
+	    		if (groupQuery.exists.run) { //if the current user is in a group
+	    		  myGroupId = groupQuery.first().sgroup_id
+	    		  var eventInGroupQuery = eventList_query.filter(_.event_id === event.event_id).filter(_.sgroup_id === myGroupId)
+	    		  if (!eventInGroupQuery.exists.run) {
+	    			  println("3- add to my group")
+	    		  }
 	    		}
 	    	
 	    		var response = readLine().trim() //get response
@@ -343,14 +346,14 @@ object CaseClassMapping extends App {
 		    		val temp = event_query.filter(_.event_id === eventId).map(_.event_down).first() + 1
 		    		voteDown.update(temp)
 	    		}
-	    		else if( response == "3"  &&  myGroup != -1) { //add event to group
-	    			val eventQuery = eventList_query.filter(_.sgroup_id === myGroup).filter(_.event_id === eventId)
+	    		else if( response == "3"  &&  myGroupId != -1) { //add event to group
+	    			val eventQuery = eventList_query.filter(_.sgroup_id === myGroupId).filter(_.event_id === eventId)
 	    			if(eventQuery.exists.run) {
 	    				println("this event is already in your group.")
 	    				
 	    			}
 	    			else {
-	    				eventList_query ++= Seq( eventList_cc(myGroup, eventId))
+	    				eventList_query ++= Seq( eventList_cc(myGroupId, eventId))
 	    				
 	    				println("Event added to your group!")
 	    			 
