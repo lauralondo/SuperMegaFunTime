@@ -368,6 +368,59 @@ object CaseClassMapping extends App {
     	} //end else
     } //end eventView
     
+    def userView(userId : Int) : Unit = {
+      var valid = false
+      do {
+        val userQuery = user_query.filter(_.user_id === userId)     		    //search for the viewed user
+        if(userQuery.exists.run) { //if the viewed user exists
+        	val groupQuery = sgroupMem_query.filter(_.member_id === currUserID) //search for the current user's group
+        	val user = userQuery.first()                                        //get the viewed user
+        	println("\n=-=-=-= " + user.user_name + "=-=-=-=")
+		    println("type exit to exit")
+		    println("0- back")
+		    
+	        if(groupQuery.exists.run) { 	   //if current user is in a group
+	        	val currGroupId = groupQuery.first().sgroup_id       //get the current user's group id
+	        	var groupRemOrAdd = false                              //boolean whether we can remove or add the viewed user to the group
+	        	var contactRemOrAdd = false
+	        	
+		        val inGroupQuery =  sgroupMem_query.filter(_.member_id === user.user_id)        //find the viewed user's group
+		        if (inGroupQuery.exists.run && inGroupQuery.first().sgroup_id == currGroupId) { //if the viewed user is in a group and is in the same group as the current user
+		        	println("1- remove from group")
+		            groupRemOrAdd = false        //we will have the option to remove the viewed user from the group
+		        }
+		        else {                         //else the viewed user is not in the current user's group
+		        	println("1- invite to group")
+		            groupRemOrAdd = true         //we will have the option to invite the viewed user to the group
+		        }
+		        
+		        val contactQuery = contact_query.filter(_.contact_owner_id === currUserID).filter(_.contact_id === user.user_id) //find if the current user know the viewed user
+		        if (contactQuery.exists.run) {        //if the viewed user is a contact with the current user
+		          println("2- remove friend")
+		          contactRemOrAdd = false
+		        }
+		        else { //else the current user does not know the viewed user
+		          println("2- send friend request")
+		          contactRemOrAdd = true
+		        }
+		        
+		        
+		        
+		        
+		        
+		        
+	        } //end if user exists
+	        else {
+	          
+	        }
+        }
+        else { //else the viewed user does not exist
+          println("ERROR: User# " + userId + " does not exist.")
+        }
+
+      } while (!valid)
+    }
+    
     
     def friendInvite(inviteId : Int) : Unit = {
     		var valid = false
