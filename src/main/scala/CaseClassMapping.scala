@@ -72,11 +72,11 @@ object CaseClassMapping extends App {
       )
       
   val eventList_insert: Option[Int]= eventList_query ++= Seq(
-      eventList_cc(1,1),
-      eventList_cc(1,4),
-      eventList_cc(2,3),
-      eventList_cc(2,4),
-      eventList_cc(2,5)
+      eventList_cc(1,1,0,0),
+      eventList_cc(1,4,0,0),
+      eventList_cc(2,3,0,0),
+      eventList_cc(2,4,0,0),
+      eventList_cc(2,5,0,0)
       )
   
   val contactInv_insert: Option[Int]= contactInv_query ++= Seq(
@@ -291,7 +291,7 @@ object CaseClassMapping extends App {
     
     
     //the event page view				//ADDED-------------------------=================================
-    def eventView( eventId:Int ) : Unit = {
+    def eventView( eventId:Int, globOrLoc:Boolean ) : Unit = {
     	val eventQuery = event_query.filter(_.event_id === eventId) //search for the event
     	
     	if (!eventQuery.exists.run) { //if the event does not exist, print & return
@@ -302,27 +302,50 @@ object CaseClassMapping extends App {
     		
     		var valid = false
 	    	do{
+	    		
 	    		val event = eventQuery.first()
 	    		var myGroupId = -1
+	    		
+	    		//find the current user's group
 	    		val groupQuery = sgroupMem_query.filter(_.member_id === currUserID) //find the current user's group
+	    		if (groupQuery.exists.run) {  //if the current user is in a group
+	    		  myGroupId = groupQuery.first().sgroup_id //find group id
+	    		}
+	    		else {
+	    		   println("this is impossible. the user is not in a group however we are in group-view of this event")
+	    		   exit
+	    		}
+	    		
+	    		//find the evetn to group relation
+	    		val groupRelation = eventList_query.filter(_.event_id === eventId).filter(_.sgroup_id === myGroupId)
+	    		val groupRel = groupRelation.first();
 	    		
 	    		println("\n=-=-=-= " + event.event_title + " =-=-=-=") 										//name
 	    		println(event.event_description) 																	//description
 	    		println("location: " + event.event_street + " " + event.event_city + " " + event.event_state + " " + event.event_zip) //place
 	    		println("time: " + event.event_time + " day: " + event.event_day) 										//time
-	    		println("up-votes: " + event.event_up + " | down-votes: " + event.event_down)					//votes
+	    		
+	    		if (!globOrLoc) { //if we're in global view
+	    			println("votes: " + event.event_up)				   //print global votes
+	    			
+	    		}
+	    		else {  //if we're in group view
+	    			println("group votes: " + groupRel.vote_up)   //print local votes
+	    		}
+	    		
+	    		
 	    		println("to exit program, type exit.")
 	    		println("0- back")
 	    		println("1- upvote")
 	    		println("2- downvote")
-	    		if (groupQuery.exists.run) { //if the current user is in a group
-	    		  myGroupId = groupQuery.first().sgroup_id
+	    		if (myGroupId > -1) {           //if the current user is in a group
 	    		  var eventInGroupQuery = eventList_query.filter(_.event_id === event.event_id).filter(_.sgroup_id === myGroupId)
-	    		  if (!eventInGroupQuery.exists.run) {
+	    		  if (!eventInGroupQuery.exists.run) { //if the event is not already in the group
 	    			  println("3- add to my group")
 	    		  }
 	    		}
 	    	
+	    		var globVote = event_query.filter(_.event_id === eventId)
 	    		var response = readLine().trim() //get response
 	    		if( response == "exit") { //exit
 	    		  println("Goodbye!")
@@ -331,21 +354,38 @@ object CaseClassMapping extends App {
 	    		else if (response == "0") { //back
 	    		  valid = true
 	    		}
-	    		else if(response == "1") { //upvote
+	    		else if(response == "1") { //upvote globals
 	    		  println("Event has been up-voted.")
 	    		  var voteUp = for {
 	    			  c <- event_query if c.event_id === eventId 
 	    		  } yield c.event_up
 	    		  val temp = event_query.filter(_.event_id === eventId).map(_.event_up).first() + 1
 	    		  voteUp.update(temp)
+	    		   
+	    		  if(globOrLoc) { //if local
+		    		  voteUp = for {
+		    			  c <- eventList_query if c.event_id === eventId && c.sgroup_id === myGroupId
+		    		  } yield c.vote_up
+		    		  val temp = eventList_query.filter(_.event_id === eventId).filter(_.sgroup_id === myGroupId).map(_.vote_up).first() + 1
+		    		  voteUp.update(temp)
+		    		  
+	    		  }
 	    		}
 	    		else if( response == "2") { //down-vote
 	    			println("Event has been down-voted.")
-		    		var voteDown = for {
+	    			var voteDown = for {
 		    			c <- event_query if c.event_id === eventId 
-		    		} yield c.event_down
-		    		val temp = event_query.filter(_.event_id === eventId).map(_.event_down).first() + 1
+		    		} yield c.event_up
+		    		val temp = event_query.filter(_.event_id === eventId).map(_.event_up).first() - 1
 		    		voteDown.update(temp)
+		    		
+		    		if(globOrLoc) { //if local
+		    		  voteDown = for {
+		    			  c <- eventList_query if c.event_id === eventId && c.sgroup_id === myGroupId
+		    		  } yield c.vote_up
+		    		  val temp = eventList_query.filter(_.event_id === eventId).filter(_.sgroup_id === myGroupId).map(_.vote_up).first() - 1
+		    		  voteDown.update(temp)
+	    		  }
 	    		}
 	    		else if( response == "3"  &&  myGroupId != -1) { //add event to group
 	    			val eventQuery = eventList_query.filter(_.sgroup_id === myGroupId).filter(_.event_id === eventId)
@@ -354,7 +394,7 @@ object CaseClassMapping extends App {
 	    				
 	    			}
 	    			else {
-	    				eventList_query ++= Seq( eventList_cc(myGroupId, eventId))
+	    				eventList_query ++= Seq( eventList_cc(myGroupId, eventId,0,0))
 	    				
 	    				println("Event added to your group!")
 	    			 
@@ -368,6 +408,10 @@ object CaseClassMapping extends App {
     	} //end else
     } //end eventView
     
+    
+    
+    
+    
     def userView(userId : Int) : Unit = {
       var valid = false
       do {
@@ -379,44 +423,65 @@ object CaseClassMapping extends App {
 		    println("type exit to exit")
 		    println("0- back")
 		    
+		    //friend request or remove
+		    var contactRemOrAdd = -1
+        	val contactQuery = contact_query.filter(_.contact_owner_id === currUserID).filter(_.contactto_owner_id === user.user_id) //find if the current user know the viewed user
+	        if (contactQuery.exists.run) {        //if the viewed user is a contact with the current user
+	          println("1- remove friend")
+	          contactRemOrAdd = 0
+	        }
+	        else { //else the current user does not know the viewed user
+	          println("1- send friend request")
+	          contactRemOrAdd = 1
+	        }
+		    
+		    
+        	//group invite or remove (only if currUser is in a group)
 	        if(groupQuery.exists.run) { 	   //if current user is in a group
 	        	val currGroupId = groupQuery.first().sgroup_id       //get the current user's group id
-	        	var groupRemOrAdd = false                              //boolean whether we can remove or add the viewed user to the group
-	        	var contactRemOrAdd = false
-	        	
+	        	var groupRemOrAdd = -1                              //boolean whether we can remove or add the viewed user to the group
 		        val inGroupQuery =  sgroupMem_query.filter(_.member_id === user.user_id)        //find the viewed user's group
 		        if (inGroupQuery.exists.run && inGroupQuery.first().sgroup_id == currGroupId) { //if the viewed user is in a group and is in the same group as the current user
-		        	println("1- remove from group")
-		            groupRemOrAdd = false        //we will have the option to remove the viewed user from the group
+		        	println("2- remove from group")
+		            groupRemOrAdd = 0        //we will have the option to remove the viewed user from the group
 		        }
 		        else {                         //else the viewed user is not in the current user's group
-		        	println("1- invite to group")
-		            groupRemOrAdd = true         //we will have the option to invite the viewed user to the group
-		        }
-		        
-		        val contactQuery = contact_query.filter(_.contact_owner_id === currUserID).filter(_.contact_id === user.user_id) //find if the current user know the viewed user
-		        if (contactQuery.exists.run) {        //if the viewed user is a contact with the current user
-		          println("2- remove friend")
-		          contactRemOrAdd = false
-		        }
-		        else { //else the current user does not know the viewed user
-		          println("2- send friend request")
-		          contactRemOrAdd = true
-		        }
-		        
-		        
-		        
-		        
-		        
-		        
-	        } //end if user exists
-	        else {
-	          
-	        }
-        }
+		        	println("2- invite to group")
+		            groupRemOrAdd = 1         //we will have the option to invite the viewed user to the group
+		        }     
+	        } //end if the current user is in a group
+	      
+        	
+        	
+        	
+        	
+        	//user response
+        	var response = readLine() //get user input
+        	 
+        	if (response == "exit") { //exit
+        	  println("goodbye!")
+        	  exit
+        	}
+        	else if(response == "0") { //go back
+        	  valid = true
+        	}
+        	else if(response == "1") {   //remove or add to contacts
+        	  if(contactRemOrAdd == 0) { //remove from contacts
+        	    contactQuery.delete
+        	    contact_query.filter(_.contact_owner_id === user.user_id).filter(_.contactto_owner_id === currUserID).delete
+        	    println("You are no longer friends with " + user.user_name + ". XD")
+        	  }
+        	}
+        	
+        	
+        	
+        } //if the viewed user exists
         else { //else the viewed user does not exist
           println("ERROR: User# " + userId + " does not exist.")
         }
+        
+        
+        
 
       } while (!valid)
     }
@@ -465,6 +530,9 @@ object CaseClassMapping extends App {
         
       }while (!valid)
     }
+    
+    
+    
     
  
       var valid = false    //is it a valid response?
@@ -583,7 +651,7 @@ object CaseClassMapping extends App {
 				          valid = true
 				      }
 				      else if (isAnInt(response) && response.toInt <= eventQuery.length.run) { //response is an event number
-				    	  eventView(idArray(response.toInt))
+				    	  eventView(idArray(response.toInt), false)
 				        
 				      }
 				 
@@ -743,22 +811,15 @@ object CaseClassMapping extends App {
 							      println("\n=-=-=-= Group Events =-=-=-=-=")
 							      println("to exit program, type exit.")
 							      println("0- back")
-							      
-							      var eventQuery = for { 
-									  c <- eventList_query if c.sgroup_id === sgroup_id
-									  o <- c.event
-								  } yield(o)
-								  eventQuery = eventQuery.sortBy(_.event_up.desc)
-								  //eventQuery.foreach(println)
-							      
-							      //Construct query finding events
-							      //val eventQuery = reg_events.filter(_.).sortBy(_.reg_events_up.desc) //all events sorted by up-vote
-							      
+							      val eventToGroup = eventList_query.filter(_.sgroup_id === sgroup_id).sortBy(_.vote_up.desc)
+			
 							      //print event list menu
-							      var idArray = new Array[Int](eventQuery.length.run + 1) //create an array to store the event IDs
+							      var idArray = new Array[Int](eventToGroup.length.run + 1) //create an array to store the event IDs
 							      var index = 1 				//index in the printout list and array
-							      for (event <- eventQuery) { 	//for every event,
-							    	  println(index + "- " + event.event_up + " " +  event.event_title + ": " + event.event_pitch) //print event info
+							      
+							      for (relation <- eventToGroup) { 	//for every event,
+							    	  val event = event_query.filter(_.event_id === relation.event_id).first()
+							    	  println(index + "- " + relation.vote_up + " " +  event.event_title + ": " + event.event_pitch) //print event info
 							    	  idArray(index) = event.event_id.get //add this event ID to the array
 							    	  index += 1 //increment index
 							      } //end for each event
@@ -772,8 +833,8 @@ object CaseClassMapping extends App {
 							      else if(response == "0") {	   //user selected back
 							          valid = true
 							      }
-							      else if (isAnInt(response) && response.toInt <= eventQuery.length.run) { //response is an event number
-							    	  eventView(idArray(response.toInt))
+							      else if (isAnInt(response) && response.toInt <= eventToGroup.length.run) { //response is an event number
+							    	  eventView(idArray(response.toInt), true)
 							        
 							      }
 							 
@@ -1012,8 +1073,8 @@ case class sgroupMem_cc(
 case class eventList_cc(
     sgroup_id: Int, 
     event_id: Int, 
-    vote_up: Option[Int] = None,
-    vote_down: Option[Int] = None,
+    vote_up: Int,
+    vote_down: Int,
     eventList_id: Option[Int] = None
     )
 case class sgroupInv_cc(
@@ -1113,7 +1174,7 @@ class eventList_table(tag: Tag) extends Table[eventList_cc](tag, "LISTOF_EVENTS"
     def vote_up: Column[Int]        = column[Int]("VOTE_UP")
     def vote_down: Column[Int]      = column[Int]("VOTE_DOWN")
     
-    def * = (sgroup_id, event_id, vote_up.?, vote_down.?, eventList_id.?) <> (eventList_cc.tupled, eventList_cc.unapply)
+    def * = (sgroup_id, event_id, vote_up, vote_down, eventList_id.?) <> (eventList_cc.tupled, eventList_cc.unapply)
     
     //Foreign Key(s)
     def sgroup: ForeignKeyQuery[sgroup_table, sgroup_cc] = foreignKey("EVENTS_TO_SGROUP", sgroup_id, TableQuery[sgroup_table])(_.sgroup_id)
