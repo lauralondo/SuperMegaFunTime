@@ -318,7 +318,7 @@ object CaseClassMapping extends App {
 	    		
 	    		//find the evetn to group relation
 	    		val groupRelation = eventList_query.filter(_.event_id === eventId).filter(_.sgroup_id === myGroupId)
-	    		val groupRel = groupRelation.first();
+	    		var groupRel : eventList_cc = new eventList_cc(0,0,0,0)
 	    		
 	    		println("\n=-=-=-= " + event.event_title + " =-=-=-=") 										//name
 	    		println(event.event_description) 																	//description
@@ -330,7 +330,9 @@ object CaseClassMapping extends App {
 	    			
 	    		}
 	    		else {  //if we're in group view
+	    		    groupRel = groupRelation.first();
 	    			println("group votes: " + groupRel.vote_up)   //print local votes
+	    			
 	    		}
 	    		
 	    		
@@ -437,15 +439,16 @@ object CaseClassMapping extends App {
 		    
 		    
         	//group invite or remove (only if currUser is in a group)
+        	var groupRemOrAdd = -1 //boolean whether we can remove or add the viewed user to the group
 	        if(groupQuery.exists.run) { 	   //if current user is in a group
-	        	val currGroupId = groupQuery.first().sgroup_id       //get the current user's group id
-	        	var groupRemOrAdd = -1                              //boolean whether we can remove or add the viewed user to the group
+	        	val currGroupId = groupQuery.first().sgroup_id       //get the current user's group id      
 		        val inGroupQuery =  sgroupMem_query.filter(_.member_id === user.user_id)        //find the viewed user's group
 		        if (inGroupQuery.exists.run && inGroupQuery.first().sgroup_id == currGroupId) { //if the viewed user is in a group and is in the same group as the current user
 		        	println("2- remove from group")
 		            groupRemOrAdd = 0        //we will have the option to remove the viewed user from the group
 		        }
-		        else {                         //else the viewed user is not in the current user's group
+	        	//else the viewed user is not in the current user's group & has not been invited
+		        else if(!sgroupInv_query.filter(_.recip_id === userId).filter(_.sgroup_id === currGroupId).exists.run) { 
 		        	println("2- invite to group")
 		            groupRemOrAdd = 1         //we will have the option to invite the viewed user to the group
 		        }     
@@ -471,6 +474,25 @@ object CaseClassMapping extends App {
         	    contact_query.filter(_.contact_owner_id === user.user_id).filter(_.contactto_owner_id === currUserID).delete
         	    println("You are no longer friends with " + user.user_name + ". XD")
         	  }
+        	  else if (contactRemOrAdd == 1) {
+        		  contactInv_query ++= Seq( contactInv_cc(currUserID, userId))
+        		  println("Friend Request Sent")
+        	  }
+        	}
+        	else if(response == "2") {
+        		val inGroupQuery =  sgroupMem_query.filter(_.member_id === user.user_id)        //find the viewed user's group relation
+        		if(groupRemOrAdd == 0) { //remove from group
+        			inGroupQuery.delete
+        			println("User deleted from group.")
+        		}
+        		else {
+        			val currGroupId = groupQuery.first().sgroup_id       //get the current user's group id      
+        			sgroupInv_query ++= Seq( sgroupInv_cc(currGroupId, currUserID, userId))
+					println("Group invite Sent")
+        		}
+        	}
+        	else {
+        	  println("invalid response")
         	}
         	
         	
@@ -521,6 +543,50 @@ object CaseClassMapping extends App {
     		  }
     		  else if (response == "2") { //delete invite
     		    val invite2 = contactInv_query.filter(_.invite_id === inviteId).delete
+    		    println("Invite deleted.") 
+    		    valid = true
+    		  }
+    		  else {
+    		    println("Invalid response.")
+    		  }
+        
+      }while (!valid)
+    }
+    
+    
+    def groupInvite(inviteId : Int) : Unit = {
+    		var valid = false
+    		do {
+    		  val invite = sgroupInv_query.filter(_.invite_id === inviteId).first()
+    		  
+    		  println("\n=-=-=-= Group Invite =-=-=-=")
+    		  println("Type exit to exit.")
+    		  println("0- back")
+    		  println("1- accept invitation")
+    		  println("2- delete invitation")
+    		  
+    		  var response = readLine().trim()
+    		  if(response == "exit") {
+    		    println("goodbye!")
+    		    exit
+    		  }
+    		  else if (response == "0") {
+    		    valid = true
+    		  }
+    		  else if(response == "1") { //accept invite
+    		    
+    		    
+    		   val sgroup_insert: Option[Int] = sgroupMem_query ++= Seq(
+    		    	sgroupMem_cc(invite.sgroup_id, invite.recip_id)
+    			)
+    			
+    			val senderName = sgroup_query.filter(_.sgroup_id === invite.sgroup_id).map(_.sgroup_name).first() //get the group name
+    			val invite2 = sgroupInv_query.filter(_.invite_id === inviteId).delete //delete the invitation
+    		    println("You are now a member of " + senderName + ".")
+    		    valid = true
+    		  }
+    		  else if (response == "2") { //delete invite
+    		    val invite2 = sgroupInv_query.filter(_.invite_id === inviteId).delete //delete the invitation
     		    println("Invite deleted.") 
     		    valid = true
     		  }
@@ -673,11 +739,24 @@ object CaseClassMapping extends App {
 				      println("0- back")
 				      println("1- Add A Friend")
 				      //construct query finding my friends
-				      val friendQuery: Query[(Column[String]), (String)] = for {
+				      val friendQuery = for {
 				        c <- contact_query if c.contact_owner_id === currUserID
 				        o <- c.contact
-				      } yield(o.user_name)
-				      friendQuery.foreach(println)
+				      } yield(o)
+				      //friendQuery.foreach(println)
+				      
+				      
+				      //Construct query finding events
+				      //val friendQuery = event_query.sortBy(_.event_up.desc) //all events sorted by up-vote
+				      //print event list menu
+				      var idArray = new Array[Int](friendQuery.length.run + 2) //create an array to store the event IDs
+				      var index = 2 				//index in the printout list and array
+				      for (friend <- friendQuery) { 	//for every event,
+				    	  println(index + "- " + friend.user_name)//event.event_up + " " +  event.event_title + ": " + event.event_pitch) //print event info
+				    	  idArray(index) = friend.user_id.get//.event_id.get //add this event ID to the array
+				    	  index += 1 //increment index
+				      } //end for each event
+				      
 			      
 				      val response = readLine()
 					  if(response == "exit") {		//if user typed exit
@@ -687,7 +766,7 @@ object CaseClassMapping extends App {
 					  else if(response == "0"){		//user selected back
 					      valid = true
 					  }
-					  else if(response == "1"){
+					  else if(response == "1"){  //add a friend
 						  do{
 							var friendusername = "" 
 							println("\n=-=-=-= Add a Friend =-=-=-=")
@@ -726,11 +805,18 @@ object CaseClassMapping extends App {
 						  } while(!valid)
 						 valid = false
 					  }
+				      else if (isAnInt(response) && response.toInt <= friendQuery.length.run + 1) { //response is an event number
+				    	  userView(idArray(response.toInt))
+				        
+				      }
+					
 					  else
 					      println("invalid response")//else invalid response
 				  	  } while (!valid)
 				      valid = false
-			    }
+			    } //end friends menu
+				
+				
 			    
 			    //My group
 			        else if(mainOp == "3") {		//if user selected My Group
@@ -925,7 +1011,7 @@ object CaseClassMapping extends App {
 					    	event_query ++= Seq( event_cc(eventname, eventPitch, eventDescription, eventStreet, eventCity, eventState, eventZipCode, eventDateInt, eventTimeInt,0,0,0)) // add values to table
 					    	
 					    	valid = true // exit loop 
-					    	println("created new event...i think")
+					    	println("created new event.")
 					    } while (!valid)	//while there is no valid answer, ask again
 					    valid = false
 			        } //end create event
@@ -948,14 +1034,6 @@ object CaseClassMapping extends App {
 			    		  valid = true
 			    		}
 			    		else if(response == "1") { //friend requests
-//							//var friendInviteQuery
-//							if(friendinvite.exists.run){
-//								val friendInviteQuery = for {
-//									c <- contactInv_query if c.recip_id === currUserID
-//											o <- c.contact_sender
-//								} yield(o.user_name)
-//								//friendInviteQuery.foreach(println)	
-//							}
 			    			valid = false
 							do {
 				    			println("\n=-=-=-= Friend Requests (" + friendinvite.length.run + ") =-=-=-=")
@@ -994,8 +1072,45 @@ object CaseClassMapping extends App {
 				    			
 							} while (!valid);
 							valid = false
-				      
-			    			
+			    		}
+			    		
+			    		else if(response == "2") { //group requests
+			    			valid = false
+							do {
+				    			println("\n=-=-=-= Group Invites (" + groupinvite.length.run + ") =-=-=-=")
+				    			println("Type exit to exit.")
+				    			println("0- back")
+				    		
+								//Construct query finding events
+								val inviteQuery = sgroupInv_query.filter(_.recip_id === currUserID) //friend invites sent to this user
+								
+								//print event list menu
+								var idArray = new Array[Int](inviteQuery.length.run + 1) //create an array to store the request IDs
+								var index = 1 				//index in the printout list and array
+								for (request <- inviteQuery) { 	//for every request,
+									val name = user_query.filter(_.user_id === request.sender_id).map(_.user_name).first()
+									println(index + "- " + name) //print request info
+									idArray(index) = request.invite_id.get //add this request ID to the array
+									index += 1 //increment index
+								} //end for each request
+				    			
+				    			response = readLine().trim()
+				    			
+				    			if(response == "exit") {
+				    			  println("goodbye!")
+				    			  exit
+				    			}
+				    			else if (response == "0") {
+				    			  valid = true
+				    			}
+				    			else if (isAnInt(response)  &&  response.toInt > 0  &&  response.toInt <= inviteQuery.length.run) {
+				    			  groupInvite(idArray(response.toInt))
+				    			}
+				    			else {
+				    			  println("Invalid response.")
+				    			}
+							} while (!valid);
+							valid = false
 			    		}
 			    		else {
 			    		  println("Invalid response.")
