@@ -1,7 +1,7 @@
 import scala.slick.driver.H2Driver.simple._
 import scala.slick.lifted.{ProvenShape, ForeignKeyQuery}
 
-object CaseClassMapping extends App {
+object SMFT extends App {
 
   //val reg_users: TableQuery[reg_users]
   //ERROR:only classes can have declared but undefined members
