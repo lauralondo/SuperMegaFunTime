@@ -236,8 +236,8 @@ object SMFT extends App {
 		    else if(username.length() < 5){
 		      println("Username must be larger than 4 characters")
 		    }
-		    else if(!userQuery.exists.run)				//if username doesnt exist,
-		    	valid = true							//its valid
+		    else if(!userQuery.exists.run)				//if username doesn't exist,
+		    	valid = true							//it's valid
 		    else										//else username already exists
 		    	println("\nusername " + username + " already exists")
 	    } while(!valid)	//if the username is not valid, ask again   
@@ -269,7 +269,7 @@ object SMFT extends App {
 		    println("retype password")
 		    val passRetype = readLine()		//get password again
 		    if(password == passRetype) {	//if equal to previous,
-		    	passMatch = true			//its a match
+		    	passMatch = true			//it's a match
 		    }
 		    else {
 		      println("passwords do not match.")  
@@ -329,7 +329,7 @@ object SMFT extends App {
     
     //the event page view
     //displays all the information about the event with the given ID
-    //can be viewed globaly or localy (relative to the user's group)
+    //can be viewed globally or locally (relative to the user's group)
     // int * boolean -> void
     def eventView( eventId:Int, globOrLoc:Boolean ) : Unit = {
     	val eventQuery = event_query.filter(_.event_id === eventId) //search for the event
@@ -587,7 +587,7 @@ object SMFT extends App {
     
     
     
-    //view the group invitation witht he given id
+    //view the group invitation with the given id
     // int -> void
     def groupInvite(inviteId : Int) : Unit = {
     		var valid = false
@@ -1114,7 +1114,7 @@ object SMFT extends App {
 				    	
 							} while (!valid); //repeat menu if not valid
 							valid = false
-			    		} //end froiend requests
+			    		} //end friend requests
 			    		
 			    		else if(response == "2") { //group requests
 			    			valid = false
@@ -1148,7 +1148,7 @@ object SMFT extends App {
 				    			}
 				    			//else if a numbered invite is selected,
 				    			else if (isAnInt(response)  &&  response.toInt > 0  &&  response.toInt <= inviteQuery.length.run) {
-				    			  groupInvite(idArray(response.toInt)) //view teh selected group invite
+				    			  groupInvite(idArray(response.toInt)) //view the selected group invite
 				    			}
 				    			else { //else invalid response
 				    			  println("Invalid response.")
