@@ -37,6 +37,6 @@ Project to set up the back-end database for the SuperMegaFunTime app.
     - If you are not yet part of a group create one in 'Create A Group'
     - In 'Events' explore what events are going to take place and a small description
        - Vote on whether or not you like the event (locally or globally)
-3. Enjoy a simplier social life
+3. Enjoy a simplified social life
 
 -enjoy!
