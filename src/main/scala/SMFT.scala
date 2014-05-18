@@ -52,11 +52,11 @@ object SMFT extends App {
   
   //insert events (title, pitch, description, street, city, state, zipcode, day, time
   val event_insert: Option[Int] = event_query ++= Seq(
-     event_cc("TacoBell","Come party with TacoBell","TacoBell is launching their new signiture 5 cheese taco. Come to our block party in downtown","123 5th","San Diego","CA","92101", 0,21,500,3),
-     event_cc("Board Games","Play D&D with a master","Local table top game masters are gathering at USD to teach students how to play new board games","5998 Alcalá Park","San Diego","CA","92110", 0,21,10,7),
-     event_cc("Star Trek Meetup","Pre-game the Con with fellow Trekkies","Trekies unite at Marriott in downtown. Cosplay appriciation, drinking, and battle plans for the Con!","660 K St","San Diego","CA","92101", 0,21,500,5),
+     event_cc("TacoBell","Come party with TacoBell","TacoBell is launching their new signature 5 cheese taco. Come to our block party in downtown","123 5th","San Diego","CA","92101", 0,21,500,3),
+     event_cc("Board Games","Play D&D with a master","Local table top game masters are gathering at USD to teach students how to play new board games","5998 Alcalï¿½ Park","San Diego","CA","92110", 0,21,10,7),
+     event_cc("Star Trek Meetup","Pre-game the Con with fellow Trekkies","Trekkies unite at Marriott in downtown. Cosplay appreciation, drinking, and battle plans for the Con!","660 K St","San Diego","CA","92101", 0,21,500,5),
      event_cc("Comic Con 2014","Comic Con International in San Diego","Comic Con International is taking over downtown San Diego. Come be part of the world entertainment yearly kickoff in the Convention Center","111 W Harbor Dr","San Diego","CA","92101", 1,21,1000,100),
-     event_cc("Padres","San Diego Padres vs Los Angeles Dogers","Come out to the ball game and support your team","100 Park Blvd","San Diego","CA","92101", 2,21,500,120)
+     event_cc("Padres","San Diego Padres vs Los Angeles Dodgers","Come out to the ball game and support your team","100 Park Blvd","San Diego","CA","92101", 2,21,500,120)
      )
      
   //insert social groups (group creator's id, group name)
@@ -128,7 +128,7 @@ object SMFT extends App {
   // val eventQuery = event_query.sortBy(_.event_id).map(_.event_title)
   // println(eventQuery.list)
   
-  //Constrct query finding sgroup
+  //Construct query finding sgroup
   //val sgroupQuery: Query[Column[Int], Int] = sgroup.sortBy(_.sgroup_id).map(_.sgroup_lead)
   // val sgroupQuery = sgroup_query.sortBy(_.sgroup_id).map(_.sgroup_lead)
   // println(sgroupQuery.list)
