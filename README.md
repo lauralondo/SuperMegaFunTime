@@ -22,11 +22,11 @@ Project to set up the back-end database for the SuperMegaFunTime app.
 ###How to use instructions:
 1. Create a new user or log in as an already registered user
     -To log in as an existing member look in the beginning of SMFT.scala in the starter data
-        -Existing members: paul, laura, molly, jasper, and sat
-        -Passwords (in order): Forte_1234, 123, 123, 123, 123
+        - Existing members: paul, laura, molly, jasper, and sat
+        - Passwords (in order): Forte_1234, 123, 123, 123, 123
 2. Explore the different options in the menu, for example:
     - In 'Friends' send friend requests to other users and view your current friends
-        -If you are already their friend you will not have the option to send another request
+        - If you are already their friend you will not have the option to send another request
     - In 'You've Got Mail' accept friend requests and group invitations
         -Not an option if no friend requests or group invites
     - In 'My Group' send invitations to friends to join to your social group
