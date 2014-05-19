@@ -1,7 +1,7 @@
 SuperMegaFunTime
 ================
   
-### Never be somewhere socially irrelevent... ever.
+### Think less, fun more.
   
 
 
