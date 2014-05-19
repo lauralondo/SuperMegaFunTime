@@ -3,8 +3,6 @@ SuperMegaFunTime
   
 ### Never be somewhere socially irrelevent... ever.
   
-Project to set up the back-end database for the SuperMegaFunTime app.
-
 
 
 -------
@@ -17,6 +15,13 @@ Project to set up the back-end database for the SuperMegaFunTime app.
 5. open the sqare shaped options menu and select "Open project in Eclipse"
 6. follow Typesafe's instructions for importing the project into Eclipse.
 7. run SMFT.scala in Eclipse
+
+-------
+###TODO at some point:
+1. Set up the back-end database for the SuperMegaFunTime app.
+2. Sortby Tiebreakers
+3. Don't let users duplicate votes
+4. GUI
 
 -------
 ###How to use instructions:
