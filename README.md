@@ -22,6 +22,9 @@ SuperMegaFunTime
 2. Sortby Tiebreakers
 3. Don't let users duplicate votes
 4. GUI
+5. Type Fixes
+6. Preempt list
+7. States based on time
 
 -------
 ###How to use instructions:
